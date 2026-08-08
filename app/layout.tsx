@@ -4,14 +4,15 @@
  *
  * Serves as the top-level layout that wraps all pages in the application.
  * Establishes the base HTML structure, global styles, font configuration,
- * and authentication provider context.
+ * theme management (light/dark), and authentication provider context.
  *
  * This layout is automatically applied to all routes in the application
  * as per Next.js App Router conventions.
  *
  * @module RootLayout
  * @requires next/font/google
- * @requires @clerk/nextjs
+ * @requires @/components/theme-provider
+ * @requires @/components/clerk-theme-provider
  */
 
 import "./globals.css";
@@ -19,8 +20,8 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
-import { ClerkProvider } from "@clerk/nextjs";
-
+import { ClerkThemeProvider } from "@/components/clerk-theme-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
 /**
@@ -66,10 +67,12 @@ export const metadata: Metadata = {
  * - Global font application via CSS variable
  * - Full-height layout configuration
  * - Anti-aliased text rendering
- * - Clerk authentication provider context
+ * - Theme management via next-themes (light/dark/system)
+ * - Clerk authentication provider with theme-aware appearance
  *
- * The ClerkProvider wraps all children to make authentication state,
- * user data, and Clerk hooks available throughout the component tree.
+ * Provider nesting order (outer → inner):
+ * 1. ThemeProvider (next-themes) — manages the `.dark` class on `<html>`
+ * 2. ClerkThemeProvider — reads the resolved theme and passes it to Clerk
  *
  * @component
  * @param {LayoutProps<"/">} props - Layout component props
@@ -94,10 +97,15 @@ export default function RootLayout({
      * - `antialiased`  : Smooth font rendering across operating systems
      * - `font-sans`    : Applies the Inter font via the --font-sans CSS variable
      * - `inter.variable` : Injects the --font-sans CSS variable into the document
+     *
+     * `suppressHydrationWarning` is required by next-themes because it
+     * injects the theme class (`dark`) on the `<html>` element before
+     * hydration, which would otherwise cause a React hydration mismatch.
      */
     <html
       className={cn("h-full", "antialiased", "font-sans", inter.variable)}
       lang="en"
+      suppressHydrationWarning
     >
       {/*
        * Body element configured as a full-height flex column.
@@ -109,18 +117,35 @@ export default function RootLayout({
        */}
       <body className="flex min-h-full flex-col">
         {/*
-         * ClerkProvider: Authentication context provider.
+         * ThemeProvider (next-themes): Manages light/dark mode.
          *
-         * Wraps all application content to provide:
-         * - Authentication state management
-         * - User session handling
-         * - Access to Clerk hooks (useUser, useAuth, etc.)
-         * - Automatic token refresh
-         *
-         * @prop {string} afterSignOutUrl - Redirect destination after user signs out.
-         *                                  Set to "/" to redirect to the home page.
+         * Configuration:
+         * - `attribute="class"` : Toggles the `.dark` class on `<html>`,
+         *   which activates the dark CSS variables in globals.css.
+         * - `defaultTheme="system"` : Respects the user's OS preference
+         *   on first visit.
+         * - `enableSystem` : Listens for OS-level theme changes and
+         *   updates automatically.
+         * - `disableTransitionOnChange` : Prevents a flash of transition
+         *   animations when the theme switches.
          */}
-        <ClerkProvider afterSignOutUrl="/">{children}</ClerkProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          disableTransitionOnChange
+          enableSystem
+          storageKey="nexuslive-theme"
+        >
+          {/*
+           * ClerkThemeProvider: Theme-aware authentication context.
+           *
+           * Reads the resolved theme from next-themes and passes the
+           * corresponding Clerk base theme (dark or default light) via
+           * the `appearance` prop so all Clerk UI components (SignIn,
+           * SignUp, UserButton, etc.) match the current color scheme.
+           */}
+          <ClerkThemeProvider>{children}</ClerkThemeProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
