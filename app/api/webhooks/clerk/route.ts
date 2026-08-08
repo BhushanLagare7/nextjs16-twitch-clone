@@ -6,15 +6,44 @@ import { verifyWebhook } from "@clerk/nextjs/webhooks";
 import { db } from "@/lib/db";
 
 /**
+ * The subset of a Clerk user webhook payload required to derive the local
+ * database representation of a user.
+ */
+interface ClerkUserPayload {
+  id: string;
+  username: string | null;
+  image_url: string;
+}
+
+/**
+ * Maps a Clerk user payload (from `user.created` or `user.updated` events)
+ * to the local database fields.
+ *
+ * Falls back to the Clerk user ID as the username when no username is set
+ * (`null` or `undefined`).
+ *
+ * @param data - The relevant fields from the Clerk webhook payload.
+ * @returns An object containing the `username` and `imageUrl` fields to persist.
+ */
+function buildUserData(data: ClerkUserPayload) {
+  return {
+    username: data.username ?? data.id,
+    imageUrl: data.image_url,
+  };
+}
+
+/**
  * Handles incoming Clerk webhook events for user lifecycle synchronisation.
  *
  * Verifies the authenticity of the incoming request using Clerk's
  * `verifyWebhook` utility, then applies the corresponding database mutation
  * based on the event type:
  *
- * - `user.created` — Creates a new local user record.
- * - `user.updated` — Updates the corresponding local user record.
- * - `user.deleted` — Deletes the corresponding local user record.
+ * - `user.created` — Upserts the local user record (create if absent,
+ *   otherwise update), guarding against duplicate deliveries of the same
+ *   event (Clerk webhooks are delivered at least once).
+ * - `user.updated` — Updates the corresponding local user record, if any.
+ * - `user.deleted` — Deletes the corresponding local user record, if any.
  *
  * Any other event type is accepted (200) but ignored, matching Clerk's
  * expectation that unhandled event types should not cause failures.
@@ -31,25 +60,27 @@ export async function POST(req: NextRequest) {
 
     switch (evt.type) {
       case "user.created": {
-        await db.user.create({
-          data: {
+        const data = buildUserData(evt.data);
+
+        await db.user.upsert({
+          where: {
             externalUserId: evt.data.id,
-            username: evt.data.username ?? evt.data.id,
-            imageUrl: evt.data.image_url,
           },
+          create: {
+            externalUserId: evt.data.id,
+            ...data,
+          },
+          update: data,
         });
         break;
       }
 
       case "user.updated": {
-        await db.user.update({
+        await db.user.updateMany({
           where: {
             externalUserId: evt.data.id,
           },
-          data: {
-            username: evt.data.username ?? evt.data.id,
-            imageUrl: evt.data.image_url,
-          },
+          data: buildUserData(evt.data),
         });
         break;
       }
@@ -59,7 +90,7 @@ export async function POST(req: NextRequest) {
           return new Response("Missing user ID in payload", { status: 400 });
         }
 
-        await db.user.delete({
+        await db.user.deleteMany({
           where: {
             externalUserId: evt.data.id,
           },
