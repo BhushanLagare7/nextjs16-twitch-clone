@@ -17,16 +17,29 @@ import { clerkMiddleware } from "@clerk/nextjs/server";
 /**
  * Clerk middleware instance that handles authentication for all matched routes.
  *
- * Responsibilities:
- * - Validates and refreshes authentication tokens
- * - Manages session state across requests
- * - Handles authentication redirects
- * - Protects routes based on authentication status
+ * Uses direct `pathname` checks instead of `createRouteMatcher` for optimal performance.
+ * - Public routes (/api/webhooks, /sign-in, /sign-up) bypass authentication checks.
+ * - All other protected routes check authentication state and redirect signed-out users to sign-in.
  *
  * @default
- * @type {import('@clerk/nextjs/server').ClerkMiddleware}
  */
-export default clerkMiddleware();
+export default clerkMiddleware(async (auth, req) => {
+  const pathname = req.nextUrl.pathname;
+
+  // Define public routes using standard string matching
+  const isPublicRoute =
+    pathname.startsWith("/api/webhooks") ||
+    pathname.startsWith("/sign-in") ||
+    pathname.startsWith("/sign-up");
+
+  if (!isPublicRoute) {
+    const { userId, redirectToSignIn } = await auth();
+
+    if (!userId) {
+      return redirectToSignIn();
+    }
+  }
+});
 
 /**
  * Next.js middleware route matcher configuration.

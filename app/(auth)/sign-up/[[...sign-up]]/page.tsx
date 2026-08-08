@@ -31,12 +31,13 @@ import { SignUp } from "@clerk/nextjs";
  * - Account creation API communication
  * - Email/phone verification flows
  * - Error messaging and display
- * - Post-registration redirects (configured via Clerk Dashboard
- *   or `afterSignUpUrl` / `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL`)
+ * - Post-registration redirects (configured via props `fallbackRedirectUrl` /
+ *   `forceRedirectUrl` or environment variables `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL` /
+ *   `NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL`)
  *
  * Appearance and behavior can be customized via:
  * - Clerk Dashboard theming and configuration settings
- * - The `appearance` prop on the SignUp component
+ * - The `appearance`, `fallbackRedirectUrl`, and `forceRedirectUrl` props on the SignUp component
  * - Environment variables for redirect URLs and allowed identifiers
  *
  * @component
@@ -47,5 +48,5 @@ import { SignUp } from "@clerk/nextjs";
  * // Rendered within AuthLayout for centered display
  */
 export default function SignUpPage(): React.JSX.Element {
-  return <SignUp />;
+  return <SignUp fallbackRedirectUrl="/" forceRedirectUrl="/" />;
 }
