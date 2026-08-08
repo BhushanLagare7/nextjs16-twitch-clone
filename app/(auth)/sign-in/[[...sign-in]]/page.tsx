@@ -30,12 +30,13 @@ import { SignIn } from "@clerk/nextjs";
  * - Form state and validation
  * - Authentication API communication
  * - Error messaging and display
- * - Post-authentication redirects (configured via Clerk Dashboard
- *   or `afterSignInUrl` / `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`)
+ * - Post-authentication redirects (configured via props `fallbackRedirectUrl` /
+ *   `forceRedirectUrl` or environment variables `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL` /
+ *   `NEXT_PUBLIC_CLERK_SIGN_IN_FORCE_REDIRECT_URL`)
  *
  * Appearance and behavior can be customized via:
  * - Clerk Dashboard theming settings
- * - The `appearance` prop on the SignIn component
+ * - The `appearance`, `fallbackRedirectUrl`, and `forceRedirectUrl` props on the SignIn component
  * - Environment variables for redirect URLs
  *
  * @component
@@ -46,5 +47,5 @@ import { SignIn } from "@clerk/nextjs";
  * // Rendered within AuthLayout for centered display
  */
 export default function SignInPage(): React.JSX.Element {
-  return <SignIn />;
+  return <SignIn fallbackRedirectUrl="/" forceRedirectUrl="/" />;
 }

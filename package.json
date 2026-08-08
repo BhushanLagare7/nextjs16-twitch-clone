@@ -12,7 +12,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "ngrok": "ngrok http 3000"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.7.0",
