@@ -1,0 +1,48 @@
+/**
+ * Generator block — defines how and where the Prisma client is generated.
+ * @property provider - Specifies the generator type. "prisma-client" generates
+ * the Prisma Client used to interact with the database.
+ * @property output   - Custom output directory for the generated client.
+ * Defaults to `node_modules/@prisma/client` if omitted.
+ * Here it is set to `../generated/prisma` relative to
+ * the schema file location.
+ */
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+/**
+ * Datasource block — configures the database connection.
+ * @property provider - The type of database to connect to. Set to "postgresql"
+ * for a PostgreSQL database.
+ * @note The connection URL is intentionally omitted here and is instead
+ * supplied at runtime via the `prisma.config.ts` file using the
+ * `DATABASE_URL` environment variable. This avoids hardcoding
+ * sensitive credentials in the schema file.
+ */
+datasource db {
+  provider = "postgresql"
+}
+
+/**
+ * User model — represents an application user in the database.
+ * Typically synchronized with an external authentication provider
+ * (e.g., Clerk, Auth0) via the `externalUserId` field.
+ * @property id             - Unique internal identifier (UUID), auto-generated.
+ * @property username       - The user's unique display name.
+ * @property imageUrl       - URL pointing to the user's profile image (stored as TEXT).
+ * @property externalUserId - Unique identifier from an external auth provider (stored as TEXT).
+ * @property bio            - Optional short biography or description (stored as TEXT).
+ * @property createdAt      - Timestamp of when the user record was created (auto-set).
+ * @property updatedAt      - Timestamp of the last update to the user record (auto-updated).
+ */
+model User {
+  id             String   @id @default(uuid())
+  username       String   @unique
+  imageUrl       String   @db.Text
+  externalUserId String   @unique
+  bio            String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
