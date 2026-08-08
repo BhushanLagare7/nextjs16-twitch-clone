@@ -33,7 +33,7 @@ import { PrismaClient } from "../generated/prisma/client";
  * DATABASE_URL="postgresql://user:password@localhost:5432/mydb"
  */
 const createPrismaClient = (): PrismaClient => {
-  const connectionString = `${process.env.DATABASE_URL}`;
+  const connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
     throw new Error("Missing DATABASE_URL environment variable");
