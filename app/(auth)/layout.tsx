@@ -13,6 +13,8 @@
  * @module AuthLayout
  */
 
+import { Logo } from "./_components/logo";
+
 /**
  * AuthLayout component for wrapping authentication pages.
  *
@@ -49,6 +51,9 @@ export default function AuthLayout({
      * - `items-center`    : Vertically centers children
      * - `justify-center`  : Horizontally centers children
      */
-    <div className="flex h-screen items-center justify-center">{children}</div>
+    <div className="flex h-screen flex-col items-center justify-center space-y-6">
+      <Logo />
+      {children}
+    </div>
   );
 }
