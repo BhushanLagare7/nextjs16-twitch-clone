@@ -137,6 +137,11 @@ const buttonVariants = cva(
          * Suitable for inline text-level actions.
          */
         link: "text-primary underline-offset-4 hover:underline",
+        /**
+         * Primary button variant — blue background with hover effect.
+         * Hover opacity is reduced to 80% on hover for a subtle effect.
+         */
+        primary: "text-white bg-blue-600 hover:bg-blue-600/80",
       },
 
       /**
