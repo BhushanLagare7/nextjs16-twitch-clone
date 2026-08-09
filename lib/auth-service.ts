@@ -68,7 +68,7 @@ export async function getSelfByUsername(username: string) {
     throw new Error("User not found");
   }
 
-  if (self.username !== user.username) {
+  if (user.externalUserId !== self.id) {
     throw new Error("Unauthorized");
   }
 

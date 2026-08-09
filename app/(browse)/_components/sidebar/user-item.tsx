@@ -68,7 +68,7 @@ export function UserItem({ username, imageUrl, isLive }: UserItemProps) {
       )}
       variant="ghost"
     >
-      <Link href={href}>
+      <Link aria-label={username} href={href}>
         <div
           className={cn(
             "flex w-full items-center gap-x-4",

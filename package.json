@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "tsx --test \"**/*.test.ts\"",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "postinstall": "prisma generate",
@@ -50,6 +51,7 @@
     "prettier-plugin-tailwindcss": "^0.8.1",
     "prisma": "^7.9.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.11",
     "typescript": "^5"
   }
 }

@@ -20,6 +20,32 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
 
 /**
+ * Normalizes a database connection string.
+ *
+ * Parses URL query parameters of the connection string. If `sslmode` is exactly `"require"`
+ * and `uselibpqcompat` is absent or not exactly `"true"`, upgrades `sslmode` to `"verify-full"`
+ * to silence pg-connection-string security warnings and ensure strict SSL verification.
+ *
+ * @param connectionString - The raw PostgreSQL connection string URL.
+ * @returns The normalized connection string URL.
+ */
+export function normalizeConnectionString(connectionString: string): string {
+  try {
+    const url = new URL(connectionString);
+    const sslmode = url.searchParams.get("sslmode");
+    const uselibpqcompat = url.searchParams.get("uselibpqcompat");
+
+    if (sslmode === "require" && uselibpqcompat !== "true") {
+      url.searchParams.set("sslmode", "verify-full");
+      return url.toString();
+    }
+  } catch {
+    // If connectionString cannot be parsed as a URL, return it unchanged
+  }
+  return connectionString;
+}
+
+/**
  * Creates a new Prisma client instance using the PostgreSQL driver adapter.
  *
  * Reads the `DATABASE_URL` environment variable to establish the connection string.
@@ -39,13 +65,7 @@ const createPrismaClient = (): PrismaClient => {
     throw new Error("Missing DATABASE_URL environment variable");
   }
 
-  /**
-   * If DATABASE_URL uses `sslmode=require` without `uselibpqcompat`, upgrade `sslmode=require`
-   * to `sslmode=verify-full` to silence pg-connection-string security warnings and ensure strict SSL verification.
-   */
-  if (connectionString.includes("sslmode=require") && !connectionString.includes("uselibpqcompat")) {
-    connectionString = connectionString.replace("sslmode=require", "sslmode=verify-full");
-  }
+  connectionString = normalizeConnectionString(connectionString);
 
   /** Initialize the PostgreSQL adapter with the connection string */
   const adapter = new PrismaPg({ connectionString });
