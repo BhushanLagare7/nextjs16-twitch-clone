@@ -33,10 +33,18 @@ import { PrismaClient } from "../generated/prisma/client";
  * DATABASE_URL="postgresql://user:password@localhost:5432/mydb"
  */
 const createPrismaClient = (): PrismaClient => {
-  const connectionString = process.env.DATABASE_URL;
+  let connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
     throw new Error("Missing DATABASE_URL environment variable");
+  }
+
+  /**
+   * If DATABASE_URL uses `sslmode=require` without `uselibpqcompat`, upgrade `sslmode=require`
+   * to `sslmode=verify-full` to silence pg-connection-string security warnings and ensure strict SSL verification.
+   */
+  if (connectionString.includes("sslmode=require") && !connectionString.includes("uselibpqcompat")) {
+    connectionString = connectionString.replace("sslmode=require", "sslmode=verify-full");
   }
 
   /** Initialize the PostgreSQL adapter with the connection string */
