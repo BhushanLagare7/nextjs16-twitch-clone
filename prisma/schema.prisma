@@ -27,13 +27,21 @@ datasource db {
 
 /**
  * User model — represents an application user in the database.
- * Typically synchronized with an external authentication provider
- * (e.g., Clerk, Auth0) via the `externalUserId` field.
+ * Typically synchronised with an external authentication provider
+ * (e.g., Clerk) via the `externalUserId` field, which stores the
+ * provider-issued identifier used to map external sessions to local
+ * user records.
  * @property id             - Unique internal identifier (UUID), auto-generated.
  * @property username       - The user's unique display name.
  * @property imageUrl       - URL pointing to the user's profile image (stored as TEXT).
- * @property externalUserId - Unique identifier from an external auth provider (stored as TEXT).
+ * @property externalUserId - Unique identifier issued by the external auth provider
+ * (stored as TEXT). Used to associate auth sessions with
+ * local user records.
  * @property bio            - Optional short biography or description (stored as TEXT).
+ * @property following      - Users that this user follows (via the Follow relation,
+ * "Following" side). Populated through the Follow join model.
+ * @property followedBy     - Users that follow this user (via the Follow relation,
+ * "FollowedBy" side). Populated through the Follow join model.
  * @property createdAt      - Timestamp of when the user record was created (auto-set).
  * @property updatedAt      - Timestamp of the last update to the user record (auto-updated).
  */
@@ -41,8 +49,56 @@ model User {
   id             String   @id @default(uuid())
   username       String   @unique
   imageUrl       String   @db.Text
-  externalUserId String   @unique
+  externalUserId String   @unique @db.Text
   bio            String?  @db.Text
+  following      Follow[] @relation("Following")
+  followedBy     Follow[] @relation("FollowedBy")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+/**
+ * Follow model — represents a directed follow relationship between two users.
+ * Acts as an explicit many-to-many join table between User records.
+ * A single Follow record encodes that `follower` (identified by `followerId`)
+ * has chosen to follow `following` (identified by `followingId`).
+ * Relation naming convention used with the User model:
+ * - "Following"  — the follower's perspective (the user doing the following).
+ * - "FollowedBy" — the followee's perspective (the user being followed).
+ * Cascade deletion ensures that follow records are automatically removed
+ * when either the follower or the followed user is deleted, preventing
+ * orphaned rows in the database.
+ * @property id          - Unique identifier for the follow relationship (UUID),
+ * auto-generated.
+ * @property followerId  - Foreign key referencing the User who is following.
+ * @property followingId - Foreign key referencing the User being followed.
+ * @property follower    - Relation field resolving to the follower User record.
+ * Linked via the "Following" relation on User.
+ * Cascades deletion when the follower user is removed.
+ * @property following   - Relation field resolving to the followed User record.
+ * Linked via the "FollowedBy" relation on User.
+ * Cascades deletion when the followed user is removed.
+ * @property createdAt   - Timestamp of when the follow relationship was created
+ * (auto-set).
+ * @property updatedAt   - Timestamp of the last update to this record
+ * (auto-updated).
+ * @unique [followerId, followingId] - Prevents duplicate follow relationships;
+ * a user can only follow another user once.
+ * @index  followerId                - Optimises queries that look up all users
+ * a given user is following.
+ * @index  followingId               - Optimises queries that look up all followers
+ * of a given user.
+ */
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  follower    User     @relation(name: "Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation(name: "FollowedBy", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
 }

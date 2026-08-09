@@ -13,6 +13,8 @@
  * @requires next/font/google
  * @requires @/components/theme-provider
  * @requires @/components/clerk-theme-provider
+ * @requires @/components/ui/sonner
+ * @requires @/lib/utils
  */
 
 import "./globals.css";
@@ -22,6 +24,7 @@ import { Inter } from "next/font/google";
 
 import { ClerkThemeProvider } from "@/components/clerk-theme-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
 /**
@@ -69,34 +72,37 @@ export const metadata: Metadata = {
  * - Anti-aliased text rendering
  * - Theme management via next-themes (light/dark/system)
  * - Clerk authentication provider with theme-aware appearance
+ * - Global toast notification support via Sonner
  *
  * Provider nesting order (outer → inner):
  * 1. ThemeProvider (next-themes) — manages the `.dark` class on `<html>`
  * 2. ClerkThemeProvider — reads the resolved theme and passes it to Clerk
  *
  * @component
- * @param {LayoutProps<"/">} props - Layout component props
+ * @param {Object} props - Layout component props
  * @param {React.ReactNode} props.children - Child components/pages to render
  *
- * @returns {JSX.Element} The root HTML document structure
+ * @returns {React.JSX.Element} The root HTML document structure
  *
  * @example
  * // Automatically applied by Next.js App Router to all routes:
- * // app/page.tsx        → wrapped by RootLayout
- * // app/dashboard/page.tsx → wrapped by RootLayout
+ * // app/page.tsx              → wrapped by RootLayout
+ * // app/dashboard/page.tsx    → wrapped by RootLayout
  */
 export default function RootLayout({
   children,
-}: LayoutProps<"/">): React.JSX.Element {
+}: {
+  children: React.ReactNode;
+}): React.JSX.Element {
   return (
     /*
      * Root HTML element.
      *
      * Applied classes:
-     * - `h-full`       : Full viewport height for proper layout stretching
-     * - `antialiased`  : Smooth font rendering across operating systems
-     * - `font-sans`    : Applies the Inter font via the --font-sans CSS variable
-     * - `inter.variable` : Injects the --font-sans CSS variable into the document
+     * - `h-full`          : Full viewport height for proper layout stretching
+     * - `antialiased`     : Smooth font rendering across operating systems
+     * - `font-sans`       : Applies the Inter font via the --font-sans CSS variable
+     * - `inter.variable`  : Injects the --font-sans CSS variable into the document
      *
      * `suppressHydrationWarning` is required by next-themes because it
      * injects the theme class (`dark`) on the `<html>` element before
@@ -120,14 +126,16 @@ export default function RootLayout({
          * ThemeProvider (next-themes): Manages light/dark mode.
          *
          * Configuration:
-         * - `attribute="class"` : Toggles the `.dark` class on `<html>`,
+         * - `attribute="class"`         : Toggles the `.dark` class on `<html>`,
          *   which activates the dark CSS variables in globals.css.
-         * - `defaultTheme="system"` : Respects the user's OS preference
+         * - `defaultTheme="system"`     : Respects the user's OS preference
          *   on first visit.
-         * - `enableSystem` : Listens for OS-level theme changes and
+         * - `enableSystem`              : Listens for OS-level theme changes and
          *   updates automatically.
          * - `disableTransitionOnChange` : Prevents a flash of transition
          *   animations when the theme switches.
+         * - `storageKey="nexuslive-theme"` : Key used in localStorage to persist
+         *   the user's chosen theme across sessions.
          */}
         <ThemeProvider
           attribute="class"
@@ -144,7 +152,17 @@ export default function RootLayout({
            * the `appearance` prop so all Clerk UI components (SignIn,
            * SignUp, UserButton, etc.) match the current color scheme.
            */}
-          <ClerkThemeProvider>{children}</ClerkThemeProvider>
+          <ClerkThemeProvider>
+            {/*
+             * Toaster: Global toast notification container (Sonner).
+             *
+             * Renders outside the page content so toast messages appear
+             * consistently across all routes without re-mounting.
+             * Theme-aware — automatically matches the active light/dark mode.
+             */}
+            <Toaster />
+            {children}
+          </ClerkThemeProvider>
         </ThemeProvider>
       </body>
     </html>
