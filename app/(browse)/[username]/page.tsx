@@ -14,6 +14,8 @@
 
 import { notFound } from "next/navigation";
 
+import { currentUser } from "@clerk/nextjs/server";
+
 import { isFollowingUser } from "@/lib/follow-service";
 import { getUserByUsername } from "@/lib/user-service";
 
@@ -40,8 +42,10 @@ interface UserPageProps {
  * 1. Resolves the `username` from the dynamic route params.
  * 2. Fetches the matching user record from the database.
  * 3. Returns a 404 response if no user is found.
- * 4. Checks whether the currently authenticated user follows this profile.
- * 5. Renders the user's details alongside follow/unfollow action controls.
+ * 4. Resolves the authenticated viewer (if any) to determine whether
+ *    follow controls should be displayed.
+ * 5. Only checks follow status and renders follow/unfollow controls when
+ *    the viewer is authenticated and is not viewing their own profile.
  *
  * @async
  * @component
@@ -64,16 +68,27 @@ export default async function UserPage({ params }: UserPageProps) {
     notFound();
   }
 
-  // Determine follow status relative to the currently authenticated user.
-  const isFollowing = await isFollowingUser(user.id);
+  // Resolve the authenticated viewer (null when not signed in).
+  const viewer = await currentUser();
+
+  // Only check follow status and show controls for authenticated viewers
+  // who are not viewing their own profile.
+  const isOwnProfile = viewer?.id === user.externalUserId;
+  const showFollowControls = viewer && !isOwnProfile;
+
+  const isFollowing = showFollowControls
+    ? await isFollowingUser(user.id)
+    : false;
 
   return (
     <div className="flex flex-col gap-y-4">
       <p>username: {user.username}</p>
       <p>user ID: {user.id}</p>
       <p>is following: {`${isFollowing}`}</p>
-      {/* Follow/Unfollow button with optimistic transition support */}
-      <Actions isFollowing={isFollowing} userId={user.id} />
+      {/* Follow/Unfollow button — only for authenticated viewers on other profiles */}
+      {showFollowControls && (
+        <Actions isFollowing={isFollowing} userId={user.id} />
+      )}
     </div>
   );
 }

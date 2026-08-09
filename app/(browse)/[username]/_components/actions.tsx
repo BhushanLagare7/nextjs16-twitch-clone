@@ -72,12 +72,13 @@ export function Actions({ isFollowing, userId }: ActionsProps) {
    * @returns {void}
    */
   const handleFollow = () => {
-    startTransition(() => {
-      onFollow(userId)
-        .then((data) =>
-          toast.success(`You are now following ${data.following.username}`),
-        )
-        .catch(() => toast.error("Something went wrong"));
+    startTransition(async () => {
+      try {
+        const data = await onFollow(userId);
+        toast.success(`You are now following ${data.following.username}`);
+      } catch {
+        toast.error("Something went wrong");
+      }
     });
   };
 
@@ -91,12 +92,13 @@ export function Actions({ isFollowing, userId }: ActionsProps) {
    * @returns {void}
    */
   const handleUnfollow = () => {
-    startTransition(() => {
-      onUnfollow(userId)
-        .then((data) =>
-          toast.success(`You have unfollowed ${data.following.username}`),
-        )
-        .catch(() => toast.error("Something went wrong"));
+    startTransition(async () => {
+      try {
+        const data = await onUnfollow(userId);
+        toast.success(`You have unfollowed ${data.following.username}`);
+      } catch {
+        toast.error("Something went wrong");
+      }
     });
   };
 
