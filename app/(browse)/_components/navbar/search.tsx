@@ -58,12 +58,14 @@ export function Search() {
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!value) return;
+    const trimmedValue = value.trim();
+
+    if (!trimmedValue) return;
 
     const url = qs.stringifyUrl(
       {
         url: "/search",
-        query: { term: value },
+        query: { term: trimmedValue },
       },
       { skipEmptyString: true },
     );
@@ -95,13 +97,18 @@ export function Search() {
       />
       {/* Clear button - only visible when the input has a value */}
       {value && (
-        <XIcon
-          className="absolute top-2.5 right-14 size-5 cursor-pointer text-muted-foreground transition hover:opacity-75"
+        <button
+          aria-label="Clear search"
+          className="absolute top-2 right-14 text-muted-foreground transition hover:opacity-75"
+          type="button"
           onClick={onClear}
-        />
+        >
+          <XIcon className="size-5" />
+        </button>
       )}
       {/* Search submit button - left border removed to visually merge with input */}
       <Button
+        aria-label="Search"
         className="rounded-l-none"
         size="sm"
         type="submit"
