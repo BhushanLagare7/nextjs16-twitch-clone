@@ -5,8 +5,13 @@
 
 "use client";
 
+import { useIsClient } from "usehooks-ts";
+
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/store/use-sidebar";
+
+import { RecommendedSkeleton } from "./recommended";
+import { ToggleSkeleton } from "./toggle";
 
 /**
  * Props for the Wrapper component.
@@ -40,11 +45,21 @@ interface WrapperProps {
  * </Wrapper>
  */
 export function Wrapper({ children }: WrapperProps) {
+  const isClient = useIsClient();
   /**
    * Reads the `collapsed` state from the global sidebar store.
    * When `true`, the sidebar renders in its narrow/collapsed width.
    */
   const { collapsed } = useSidebar((state) => state);
+
+  if (!isClient) {
+    return (
+      <aside className="fixed left-0 z-50 flex h-full w-17.5 flex-col border-r border-border bg-background lg:w-60 dark:border-[#2D2E35]">
+        <ToggleSkeleton />
+        <RecommendedSkeleton />
+      </aside>
+    );
+  }
 
   return (
     <aside
