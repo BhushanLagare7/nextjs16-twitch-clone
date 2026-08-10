@@ -60,11 +60,12 @@ export function Following({ data }: FollowingProps) {
       )}
       <ul className="space-y-2 px-2">
         {data.map((follow) => (
-          <UserItem
-            key={follow.following.id}
-            imageUrl={follow.following.imageUrl}
-            username={follow.following.username}
-          />
+          <li key={follow.following.id}>
+            <UserItem
+              imageUrl={follow.following.imageUrl}
+              username={follow.following.username}
+            />
+          </li>
         ))}
       </ul>
     </div>

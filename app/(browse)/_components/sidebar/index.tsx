@@ -35,8 +35,10 @@ import { Wrapper } from "./wrapper";
  * </Suspense>
  */
 export async function Sidebar() {
-  const recommended = await getRecommended();
-  const following = await getFollowedUsers();
+  const [recommended, following] = await Promise.all([
+    getRecommended(),
+    getFollowedUsers(),
+  ]);
 
   return (
     <Wrapper>
