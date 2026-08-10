@@ -2,6 +2,34 @@ import { getSelf } from "@/lib/auth-service";
 import { db } from "@/lib/db";
 
 /**
+ * Fetches the list of users the currently authenticated user follows.
+ *
+ * Any error during the lookup (e.g. no authenticated user) is silently
+ * caught and results in an empty array being returned.
+ *
+ * @returns An array of follow records (including the `following` user relation),
+ * or an empty array if the lookup fails for any reason.
+ */
+export async function getFollowedUsers() {
+  try {
+    const self = await getSelf();
+
+    const followedUsers = await db.follow.findMany({
+      where: {
+        followerId: self.id,
+      },
+      include: {
+        following: true,
+      },
+    });
+
+    return followedUsers;
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Fetches the currently authenticated user and the target user by id.
  *
  * @param id - The id of the target user to fetch.

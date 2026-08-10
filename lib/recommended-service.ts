@@ -20,7 +20,8 @@ export const RECOMMENDED_LIMIT = 10;
  *
  * Behaviour varies depending on whether the caller is authenticated:
  * - **Authenticated**: Returns up to {@link RECOMMENDED_LIMIT} users ordered
- *   by newest first, *excluding* the currently authenticated user's own record.
+ *   by newest first, *excluding* the currently authenticated user's own record
+ *   and any users the current user already follows.
  * - **Unauthenticated**: Returns up to {@link RECOMMENDED_LIMIT} users ordered
  *   by newest first with no exclusions applied.
  *
@@ -44,7 +45,7 @@ export const RECOMMENDED_LIMIT = 10;
  * recommended.forEach((user) => console.log(user.username));
  */
 export async function getRecommended() {
-  let userId;
+  let userId: string | null = null;
 
   try {
     const self = await getSelf();
@@ -58,36 +59,34 @@ export async function getRecommended() {
     userId = null;
   }
 
-  let users = [];
+  /*
+   * Build the `where` clause conditionally:
+   * - Authenticated: exclude the current user and anyone they already follow.
+   * - Unauthenticated: `undefined` applies no filter, matching Prisma's
+   *   default "no where clause" behaviour.
+   */
+  const where = userId
+    ? {
+        AND: [
+          { NOT: { id: userId } },
+          {
+            NOT: {
+              followedBy: {
+                some: { followerId: userId },
+              },
+            },
+          },
+        ],
+      }
+    : undefined;
 
-  if (userId) {
-    /*
-     * Authenticated path: exclude the current user's own record from
-     * recommendations so they do not appear in their own sidebar list.
-     */
-    users = await db.user.findMany({
-      where: {
-        NOT: {
-          id: userId,
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: RECOMMENDED_LIMIT,
-    });
-  } else {
-    /*
-     * Unauthenticated path: return all users ordered by newest first
-     * with no exclusion filter applied.
-     */
-    users = await db.user.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-      take: RECOMMENDED_LIMIT,
-    });
-  }
+  const users = await db.user.findMany({
+    where,
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: RECOMMENDED_LIMIT,
+  });
 
   return users;
 }
