@@ -5,7 +5,7 @@
 
 "use client";
 
-import { User } from "@/generated/prisma/browser";
+import { User } from "@/generated/prisma/client";
 import { useSidebar } from "@/store/use-sidebar";
 
 import { UserItem, UserItemSkeleton } from "./user-item";
