@@ -72,30 +72,29 @@ export async function blockUser(id: string) {
     throw new Error("User not found");
   }
 
-  const existingBlock = await db.block.findUnique({
-    where: {
-      blockerId_blockedId: {
+  try {
+    const blockedUser = await db.block.create({
+      data: {
         blockerId: self.id,
         blockedId: otherUser.id,
       },
-    },
-  });
+      include: {
+        blocked: true,
+      },
+    });
 
-  if (existingBlock) {
-    throw new Error("Already blocked");
+    return blockedUser;
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "P2002"
+    ) {
+      throw new Error("Already blocked");
+    }
+    throw error;
   }
-
-  const blockedUser = await db.block.create({
-    data: {
-      blockerId: self.id,
-      blockedId: otherUser.id,
-    },
-    include: {
-      blocked: true,
-    },
-  });
-
-  return blockedUser;
 }
 
 /**
@@ -125,27 +124,29 @@ export async function unblockUser(id: string) {
     throw new Error("User not found");
   }
 
-  const existingBlock = await db.block.findUnique({
-    where: {
-      blockerId_blockedId: {
-        blockerId: self.id,
-        blockedId: otherUser.id,
+  try {
+    const unblockedUser = await db.block.delete({
+      where: {
+        blockerId_blockedId: {
+          blockerId: self.id,
+          blockedId: otherUser.id,
+        },
       },
-    },
-  });
+      include: {
+        blocked: true,
+      },
+    });
 
-  if (!existingBlock) {
-    throw new Error("Not blocked");
+    return unblockedUser;
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "P2025"
+    ) {
+      throw new Error("Not blocked");
+    }
+    throw error;
   }
-
-  const unblockedUser = await db.block.delete({
-    where: {
-      id: existingBlock.id,
-    },
-    include: {
-      blocked: true,
-    },
-  });
-
-  return unblockedUser;
 }

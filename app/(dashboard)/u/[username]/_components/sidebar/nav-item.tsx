@@ -56,24 +56,26 @@ export function NavItem({ icon: Icon, label, href, isActive }: NavItemProps) {
   const { collapsed } = useCreatorSidebar((state) => state);
 
   return (
-    <Button
-      asChild
-      className={cn(
-        "h-12 w-full",
-        collapsed ? "justify-center" : "justify-start",
-        isActive && "bg-accent",
-      )}
-      variant="ghost"
-    >
-      <Link href={href}>
-        <div className="flex items-center gap-x-4">
-          {/* Navigation icon with responsive margin based on sidebar state */}
-          <Icon className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-2")} />
-          {/* Label is hidden when the sidebar is collapsed */}
-          {!collapsed && <span>{label}</span>}
-        </div>
-      </Link>
-    </Button>
+    <li>
+      <Button
+        asChild
+        className={cn(
+          "h-12 w-full",
+          collapsed ? "justify-center" : "justify-start",
+          isActive && "bg-accent",
+        )}
+        variant="ghost"
+      >
+        <Link aria-label={collapsed ? label : undefined} href={href}>
+          <div className="flex items-center gap-x-4">
+            {/* Navigation icon with responsive margin based on sidebar state */}
+            <Icon className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-2")} />
+            {/* Label is hidden when the sidebar is collapsed */}
+            {!collapsed && <span>{label}</span>}
+          </div>
+        </Link>
+      </Button>
+    </li>
   );
 }
 

@@ -68,12 +68,17 @@ export default async function CreatorLayout({
   const { username } = await params;
 
   // Retrieve the authenticated user matching the URL username segment.
-  // Returns null if the current session does not belong to this username.
-  const self = await getSelfByUsername(username);
-
-  // Redirect unauthorised visitors to the home page.
-  if (!self) {
-    redirect("/");
+  // Catch expected missing-user and ownership-mismatch failures and redirect to "/".
+  try {
+    await getSelfByUsername(username);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.message === "User not found" || error.message === "Unauthorized")
+    ) {
+      redirect("/");
+    }
+    throw error;
   }
 
   return (

@@ -43,8 +43,8 @@ export function Wrapper({ children }: WrapperProps) {
   return (
     <aside
       className={cn(
-        // Base styles: fixed to the left, full height, narrow default width
-        "fixed left-0 z-50 flex h-full w-17.5 flex-col border-r border-border bg-background lg:w-60 dark:border-[#2D2E35]",
+        // Base styles: fixed to the left below navbar, narrow default width
+        "fixed left-0 top-20 z-50 flex h-[calc(100vh-80px)] w-17.5 flex-col border-r border-border bg-background lg:w-60 dark:border-[#2D2E35]",
         // Override to narrow width on large screens when collapsed
         collapsed && "lg:w-17.5",
       )}

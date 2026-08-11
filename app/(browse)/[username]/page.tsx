@@ -87,16 +87,16 @@ export default async function UserPage({ params }: UserPageProps) {
     ? await isFollowingUser(user.id)
     : false;
 
-  // Check whether the authenticated viewer has blocked the target user.
+  // Check whether the authenticated viewer is blocked by the target user.
   // Only applicable when a viewer is signed in.
-  const isBlockedByViewer = viewer ? await isBlockedByUser(user.id) : false;
+  const isBlockedByThisUser = viewer ? await isBlockedByUser(user.id) : false;
 
   return (
     <div className="flex flex-col gap-y-4">
       <p>username: {user.username}</p>
       <p>user ID: {user.id}</p>
       <p>is following: {`${isFollowing}`}</p>
-      <p>is blocked by viewer: {`${isBlockedByViewer}`}</p>
+      <p>is blocked by user: {`${isBlockedByThisUser}`}</p>
       {/* Follow/Unfollow and Block buttons — only rendered for authenticated
           viewers who are not viewing their own profile. */}
       {showFollowControls && (
