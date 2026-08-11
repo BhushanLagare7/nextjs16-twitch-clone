@@ -32,10 +32,13 @@ export function ToggleCard({ label, value = false, field }: ToggleCardProps) {
   const [isPending, startTransition] = useTransition();
 
   const onChange = () => {
-    startTransition(() => {
-      updateStream({ [field]: !value })
-        .then(() => toast.success("Chat settings updated!"))
-        .catch(() => toast.error("Something went wrong"));
+    startTransition(async () => {
+      try {
+        await updateStream({ [field]: !value });
+        toast.success("Chat settings updated!");
+      } catch {
+        toast.error("Something went wrong");
+      }
     });
   };
 
@@ -45,6 +48,7 @@ export function ToggleCard({ label, value = false, field }: ToggleCardProps) {
         <p className="shrink-0 font-semibold">{label}</p>
         <div className="space-y-2">
           <Switch
+            aria-label={label}
             checked={value}
             disabled={isPending}
             onCheckedChange={onChange}
