@@ -1,6 +1,6 @@
 /**
  * @file lib/recommended-service.ts
- * @description Service functions for fetching recommended users from the database.
+ * @description Service functions for fetching recommended users.
  */
 
 import { db } from "@/lib/db";
@@ -20,29 +20,18 @@ export const RECOMMENDED_LIMIT = 10;
  *
  * Behaviour varies depending on whether the caller is authenticated:
  * - **Authenticated**: Returns up to {@link RECOMMENDED_LIMIT} users ordered
- *   by newest first, *excluding* the currently authenticated user's own record
- *   and any users the current user already follows.
+ *   by newest first, excluding the current user's own record, any users they
+ *   already follow, and any users who have blocked them.
  * - **Unauthenticated**: Returns up to {@link RECOMMENDED_LIMIT} users ordered
  *   by newest first with no exclusions applied.
  *
  * Authentication state is determined by calling `getSelf()`. If `getSelf()`
- * throws (e.g., no active session), the error is silently caught and the
- * function proceeds in unauthenticated mode.
+ * throws (e.g. no active session), the error is silently caught and the
+ * function falls back to unauthenticated mode.
  *
- * This is a server-side function intended to be called from async server
- * components such as the `Sidebar` component.
- *
- * @async
- * @function getRecommended
- *
- * @returns {Promise<import("@prisma/client").User[]>} A promise that resolves
- *   to an array of Prisma `User` records sorted in descending order by
- *   `createdAt`, containing at most {@link RECOMMENDED_LIMIT} entries.
- *
- * @example
- * // Inside an async server component:
- * const recommended = await getRecommended();
- * recommended.forEach((user) => console.log(user.username));
+ * @returns A promise resolving to an array of `User` records sorted in
+ * descending order by `createdAt`, containing at most
+ * {@link RECOMMENDED_LIMIT} entries.
  */
 export async function getRecommended() {
   let userId: string | null = null;
@@ -61,7 +50,8 @@ export async function getRecommended() {
 
   /*
    * Build the `where` clause conditionally:
-   * - Authenticated: exclude the current user and anyone they already follow.
+   * - Authenticated: exclude the current user, anyone they already follow,
+   *   and anyone who has blocked them.
    * - Unauthenticated: `undefined` applies no filter, matching Prisma's
    *   default "no where clause" behaviour.
    */
@@ -73,6 +63,13 @@ export async function getRecommended() {
             NOT: {
               followedBy: {
                 some: { followerId: userId },
+              },
+            },
+          },
+          {
+            NOT: {
+              blocking: {
+                some: { blockedId: userId },
               },
             },
           },

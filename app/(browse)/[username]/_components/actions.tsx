@@ -1,11 +1,15 @@
 /**
  * @file app/(browse)/[username]/_components/actions.tsx
- * @description Client-side follow/unfollow action component for user profile pages.
+ * @description Client-side follow/unfollow and block action component for
+ * user profile pages.
  *
- * Renders a single button that toggles the follow state between the
- * currently authenticated user and a target user. Uses React's
- * `useTransition` hook to track pending server action states and
- * display toast notifications on success or failure.
+ * Renders two buttons:
+ * - A follow/unfollow toggle that switches the follow relationship between
+ *   the authenticated user and the target user.
+ * - A block button that permanently blocks the target user.
+ *
+ * Uses React's `useTransition` hook to track pending server action states
+ * and displays toast notifications on success or failure.
  *
  * @module Actions
  */
@@ -16,6 +20,7 @@ import { useTransition } from "react";
 
 import { toast } from "sonner";
 
+import { onBlock } from "@/actions/block";
 import { onFollow, onUnfollow } from "@/actions/follow";
 import { Button } from "@/components/ui/button";
 
@@ -26,7 +31,7 @@ import { Button } from "@/components/ui/button";
  * @property {boolean} isFollowing - Whether the current user already follows
  *   the target user. Determines the initial button label and action.
  * @property {string} userId - The unique identifier of the target user
- *   to follow or unfollow.
+ *   to follow, unfollow, or block.
  */
 interface ActionsProps {
   isFollowing: boolean;
@@ -34,30 +39,33 @@ interface ActionsProps {
 }
 
 /**
- * Actions component — renders a follow/unfollow toggle button.
+ * Actions component — renders follow/unfollow and block buttons for a
+ * user profile page.
  *
- * Manages the asynchronous follow/unfollow server action calls within
- * a React transition to avoid blocking the UI. Displays a success toast
- * with the followed/unfollowed username on completion, or an error toast
- * if the action fails.
+ * Manages asynchronous follow, unfollow, and block server action calls
+ * within a shared React transition to avoid blocking the UI. Displays a
+ * success toast with the relevant username on completion, or an error toast
+ * if any action fails.
  *
- * The button is disabled while any transition is in progress to prevent
- * duplicate submissions.
+ * All buttons are disabled while a transition is in progress to prevent
+ * duplicate or concurrent submissions.
  *
  * @component
  * @param {ActionsProps} props - The component props.
  * @param {boolean} props.isFollowing - Current follow state for the target user.
- * @param {string} props.userId - ID of the user to follow or unfollow.
+ * @param {string} props.userId - ID of the user to follow, unfollow, or block.
  *
- * @returns {JSX.Element} A follow/unfollow button with pending state handling.
+ * @returns {JSX.Element} Follow/unfollow and block buttons with pending state
+ *   handling.
  *
  * @example
  * <Actions isFollowing={false} userId="user_abc123" />
  */
 export function Actions({ isFollowing, userId }: ActionsProps) {
   /**
-   * `isPending` — true while the follow/unfollow server action is in flight.
-   * `startTransition` — wraps the async action to mark it as a non-urgent update,
+   * `isPending` — true while any server action (follow, unfollow, or block)
+   * is in flight.
+   * `startTransition` — wraps async actions to mark them as non-urgent updates,
    * keeping the UI responsive during the server round-trip.
    */
   const [isPending, startTransition] = useTransition();
@@ -103,9 +111,9 @@ export function Actions({ isFollowing, userId }: ActionsProps) {
   };
 
   /**
-   * Handles the button click event.
+   * Handles the follow/unfollow button click event.
    *
-   * Delegates to `handleUnfollow` if the user is currently followed,
+   * Delegates to `handleUnfollow` if the target user is currently followed,
    * otherwise delegates to `handleFollow`.
    *
    * @returns {void}
@@ -118,9 +126,36 @@ export function Actions({ isFollowing, userId }: ActionsProps) {
     }
   };
 
+  /**
+   * Initiates a block action for the target user.
+   *
+   * Wraps the `onBlock` server action in a transition so React can track
+   * its pending state. Shows a success toast with the blocked user's username
+   * on resolution, or an error toast on rejection.
+   *
+   * @returns {void}
+   */
+  const handleBlock = () => {
+    startTransition(async () => {
+      try {
+        const data = await onBlock(userId);
+        toast.success(`You have blocked ${data.blocked.username}`);
+      } catch {
+        toast.error("Something went wrong");
+      }
+    });
+  };
+
   return (
-    <Button disabled={isPending} variant="primary" onClick={onClick}>
-      {isFollowing ? "Unfollow" : "Follow"}
-    </Button>
+    <>
+      {/* Follow/Unfollow toggle button — label reflects the current follow state. */}
+      <Button disabled={isPending} variant="primary" onClick={onClick}>
+        {isFollowing ? "Unfollow" : "Follow"}
+      </Button>
+      {/* Block button — permanently blocks the target user. */}
+      <Button disabled={isPending} onClick={handleBlock}>
+        Block
+      </Button>
+    </>
   );
 }

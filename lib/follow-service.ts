@@ -7,8 +7,8 @@ import { db } from "@/lib/db";
  * Any error during the lookup (e.g. no authenticated user) is silently
  * caught and results in an empty array being returned.
  *
- * @returns An array of follow records (including the `following` user relation),
- * or an empty array if the lookup fails for any reason.
+ * @returns An array of follow records (including the `following` user
+ * relation), or an empty array if the lookup fails for any reason.
  */
 export async function getFollowedUsers() {
   try {
@@ -17,6 +17,13 @@ export async function getFollowedUsers() {
     const followedUsers = await db.follow.findMany({
       where: {
         followerId: self.id,
+        following: {
+          blocking: {
+            none: {
+              blockedId: self.id,
+            },
+          },
+        },
       },
       include: {
         following: true,
@@ -33,8 +40,9 @@ export async function getFollowedUsers() {
  * Fetches the currently authenticated user and the target user by id.
  *
  * @param id - The id of the target user to fetch.
- * @returns An object containing the authenticated user (`self`) and the target user (`otherUser`).
- * @throws {Error} If the target user cannot be found ("User not found").
+ * @returns An object containing the authenticated user (`self`) and the
+ * target user (`otherUser`).
+ * @throws {Error} `"User not found"` — If no user record exists for `id`.
  */
 async function getSelfAndTargetUser(id: string) {
   const self = await getSelf();
@@ -55,7 +63,8 @@ async function getSelfAndTargetUser(id: string) {
  *
  * @param followerId - The id of the user doing the following.
  * @param followingId - The id of the user being followed.
- * @returns The existing follow record, or `null` if no such relationship exists.
+ * @returns The existing follow record, or `null` if no such relationship
+ * exists.
  */
 function getExistingFollow(followerId: string, followingId: string) {
   return db.follow.findFirst({
@@ -67,14 +76,17 @@ function getExistingFollow(followerId: string, followingId: string) {
 }
 
 /**
- * Determines whether the currently authenticated user is following the given user.
+ * Determines whether the currently authenticated user is following the
+ * given user.
  *
- * A user is considered to be "following" themselves (returns `true` when
- * checking against their own id). Any error during the check (e.g. no
- * authenticated user, target user not found) results in `false`.
+ * A user is considered to be "following" themselves — if `id` matches the
+ * current user's own id, `true` is returned immediately. Any error during
+ * the check (e.g. no authenticated session, target user not found) is
+ * silently caught and results in `false` being returned.
  *
  * @param id - The id of the user to check.
- * @returns `true` if the current user follows the given user (or is the same user), otherwise `false`.
+ * @returns `true` if the current user follows the given user (or is the
+ * same user), otherwise `false`.
  */
 export async function isFollowingUser(id: string) {
   try {
@@ -93,13 +105,17 @@ export async function isFollowingUser(id: string) {
 }
 
 /**
- * Creates a follow relationship from the currently authenticated user to the target user.
+ * Creates a follow relationship from the currently authenticated user to
+ * the target user.
  *
  * @param id - The id of the user to follow.
- * @returns The created follow record, including the `follower` and `following` relations.
- * @throws {Error} If the target user does not exist ("User not found"),
- * if the user attempts to follow themselves ("Cannot follow yourself"),
- * or if the follow relationship already exists ("Already following").
+ * @returns The created follow record, including the `follower` and
+ * `following` relations.
+ * @throws {Error} `"User not found"` — If no user record exists for `id`.
+ * @throws {Error} `"Cannot follow yourself"` — If `id` matches the current
+ * user's own id.
+ * @throws {Error} `"Already following"` — If a follow relationship already
+ * exists from the current user toward the target user.
  */
 export async function followUser(id: string) {
   const { self, otherUser } = await getSelfAndTargetUser(id);
@@ -129,13 +145,16 @@ export async function followUser(id: string) {
 }
 
 /**
- * Removes the follow relationship from the currently authenticated user to the target user.
+ * Removes the follow relationship from the currently authenticated user to
+ * the target user.
  *
  * @param id - The id of the user to unfollow.
  * @returns The deleted follow record, including the `following` relation.
- * @throws {Error} If the target user does not exist ("User not found"),
- * if the user attempts to unfollow themselves ("Cannot unfollow yourself"),
- * or if no follow relationship exists ("Not following").
+ * @throws {Error} `"User not found"` — If no user record exists for `id`.
+ * @throws {Error} `"Cannot unfollow yourself"` — If `id` matches the
+ * current user's own id.
+ * @throws {Error} `"Not following"` — If no follow relationship exists from
+ * the current user toward the target user.
  */
 export async function unfollowUser(id: string) {
   const { self, otherUser } = await getSelfAndTargetUser(id);
