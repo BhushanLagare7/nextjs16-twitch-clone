@@ -1,11 +1,11 @@
 /**
  * Generator block — defines how and where the Prisma client is generated.
  * @property provider - Specifies the generator type. "prisma-client" generates
- * the Prisma Client used to interact with the database.
+ *                      the Prisma Client used to interact with the database.
  * @property output   - Custom output directory for the generated client.
- * Defaults to `node_modules/@prisma/client` if omitted.
- * Here it is set to `../generated/prisma` relative to
- * the schema file location.
+ *                      Defaults to `node_modules/@prisma/client` if omitted.
+ *                      Here it is set to `../generated/prisma` relative to
+ *                      the schema file location.
  */
 generator client {
   provider = "prisma-client"
@@ -15,11 +15,11 @@ generator client {
 /**
  * Datasource block — configures the database connection.
  * @property provider - The type of database to connect to. Set to "postgresql"
- * for a PostgreSQL database.
+ *                      for a PostgreSQL database.
  * @note The connection URL is intentionally omitted here and is instead
- * supplied at runtime via the `prisma.config.ts` file using the
- * `DATABASE_URL` environment variable. This avoids hardcoding
- * sensitive credentials in the schema file.
+ *       supplied at runtime via the `prisma.config.ts` file using the
+ *       `DATABASE_URL` environment variable. This avoids hardcoding
+ *       sensitive credentials in the schema file.
  */
 datasource db {
   provider = "postgresql"
@@ -31,17 +31,22 @@ datasource db {
  * (e.g., Clerk) via the `externalUserId` field, which stores the
  * provider-issued identifier used to map external sessions to local
  * user records.
+ *
  * @property id             - Unique internal identifier (UUID), auto-generated.
  * @property username       - The user's unique display name.
  * @property imageUrl       - URL pointing to the user's profile image (stored as TEXT).
  * @property externalUserId - Unique identifier issued by the external auth provider
- * (stored as TEXT). Used to associate auth sessions with
- * local user records.
+ *                            (stored as TEXT). Used to associate auth sessions with
+ *                            local user records.
  * @property bio            - Optional short biography or description (stored as TEXT).
  * @property following      - Users that this user follows (via the Follow relation,
- * "Following" side). Populated through the Follow join model.
+ *                            "Following" side). Populated through the Follow join model.
  * @property followedBy     - Users that follow this user (via the Follow relation,
- * "FollowedBy" side). Populated through the Follow join model.
+ *                            "FollowedBy" side). Populated through the Follow join model.
+ * @property blocking       - Users that this user has blocked (via the Block relation,
+ *                            "Blocking" side). Populated through the Block join model.
+ * @property blockedBy      - Users that have blocked this user (via the Block relation,
+ *                            "BlockedBy" side). Populated through the Block join model.
  * @property createdAt      - Timestamp of when the user record was created (auto-set).
  * @property updatedAt      - Timestamp of the last update to the user record (auto-updated).
  */
@@ -53,6 +58,8 @@ model User {
   bio            String?  @db.Text
   following      Follow[] @relation("Following")
   followedBy     Follow[] @relation("FollowedBy")
+  blocking       Block[]  @relation("Blocking")
+  blockedBy      Block[]  @relation("BlockedBy")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -62,32 +69,36 @@ model User {
  * Acts as an explicit many-to-many join table between User records.
  * A single Follow record encodes that `follower` (identified by `followerId`)
  * has chosen to follow `following` (identified by `followingId`).
+ *
  * Relation naming convention used with the User model:
  * - "Following"  — the follower's perspective (the user doing the following).
  * - "FollowedBy" — the followee's perspective (the user being followed).
+ *
  * Cascade deletion ensures that follow records are automatically removed
  * when either the follower or the followed user is deleted, preventing
  * orphaned rows in the database.
+ *
  * @property id          - Unique identifier for the follow relationship (UUID),
- * auto-generated.
+ *                         auto-generated.
  * @property followerId  - Foreign key referencing the User who is following.
  * @property followingId - Foreign key referencing the User being followed.
  * @property follower    - Relation field resolving to the follower User record.
- * Linked via the "Following" relation on User.
- * Cascades deletion when the follower user is removed.
+ *                         Linked via the "Following" relation on User.
+ *                         Cascades deletion when the follower user is removed.
  * @property following   - Relation field resolving to the followed User record.
- * Linked via the "FollowedBy" relation on User.
- * Cascades deletion when the followed user is removed.
+ *                         Linked via the "FollowedBy" relation on User.
+ *                         Cascades deletion when the followed user is removed.
  * @property createdAt   - Timestamp of when the follow relationship was created
- * (auto-set).
+ *                         (auto-set).
  * @property updatedAt   - Timestamp of the last update to this record
- * (auto-updated).
+ *                         (auto-updated).
+ *
  * @unique [followerId, followingId] - Prevents duplicate follow relationships;
- * a user can only follow another user once.
+ *                                     a user can only follow another user once.
  * @index  followerId                - Optimises queries that look up all users
- * a given user is following.
+ *                                     a given user is following.
  * @index  followingId               - Optimises queries that look up all followers
- * of a given user.
+ *                                     of a given user.
  */
 model Follow {
   id          String   @id @default(uuid())
@@ -101,4 +112,48 @@ model Follow {
   @@unique([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
+}
+
+/**
+ * Block model — represents a directed block relationship between two users.
+ * Acts as an explicit many-to-many join table between User records.
+ * A single Block record encodes that `blocker` (identified by `blockerId`)
+ * has chosen to block `blocked` (identified by `blockedId`).
+ *
+ * Relation naming convention used with the User model:
+ * - "Blocking"  — the blocker's perspective (the user doing the blocking).
+ * - "BlockedBy" — the blockee's perspective (the user being blocked).
+ *
+ * Cascade deletion ensures that block records are automatically removed
+ * when either the blocker or the blocked user is deleted, preventing
+ * orphaned rows in the database.
+ *
+ * @property id        - Unique identifier for the block relationship (UUID),
+ *                       auto-generated.
+ * @property blockerId - Foreign key referencing the User who is blocking.
+ * @property blockedId - Foreign key referencing the User being blocked.
+ * @property blocker   - Relation field resolving to the blocker User record.
+ *                       Linked via the "Blocking" relation on User.
+ *                       Cascades deletion when the blocker user is removed.
+ * @property blocked   - Relation field resolving to the blocked User record.
+ *                       Linked via the "BlockedBy" relation on User.
+ *                       Cascades deletion when the blocked user is removed.
+ *
+ * @unique [blockerId, blockedId] - Prevents duplicate block relationships;
+ *                                  a user can only block another user once.
+ * @index  blockerId              - Optimises queries that look up all users
+ *                                  a given user has blocked.
+ * @index  blockedId              - Optimises queries that look up all users
+ *                                  who have blocked a given user.
+ */
+model Block {
+  id        String @id @default(uuid())
+  blockerId String
+  blockedId String
+  blocker   User   @relation(name: "Blocking", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked   User   @relation(name: "BlockedBy", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
 }

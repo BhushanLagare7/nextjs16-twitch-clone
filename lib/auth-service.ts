@@ -1,6 +1,7 @@
 import type { User as ClerkUser } from "@clerk/nextjs/server";
 import { currentUser } from "@clerk/nextjs/server";
 
+import { User } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 
 /**
@@ -31,7 +32,7 @@ async function requireAuthenticatedClerkUser(): Promise<ClerkUser> {
  * @returns The local database user record corresponding to the current
  * Clerk session.
  */
-export async function getSelf() {
+export async function getSelf(): Promise<User> {
   const self = await requireAuthenticatedClerkUser();
 
   const user = await db.user.findUnique({
@@ -57,7 +58,7 @@ export async function getSelf() {
  * the given username.
  * @returns The local database user record matching `username`.
  */
-export async function getSelfByUsername(username: string) {
+export async function getSelfByUsername(username: string): Promise<User> {
   const self = await requireAuthenticatedClerkUser();
 
   const user = await db.user.findUnique({

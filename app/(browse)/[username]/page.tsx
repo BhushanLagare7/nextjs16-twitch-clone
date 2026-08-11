@@ -4,7 +4,8 @@
  *
  * Renders a public-facing user profile page accessible via `/<username>`.
  * Fetches user data by username from the database and determines whether
- * the currently authenticated user is following the viewed profile.
+ * the currently authenticated viewer is following or has blocked the
+ * viewed profile.
  *
  * Redirects to the Next.js 404 page if the given username does not
  * correspond to an existing user.
@@ -16,6 +17,7 @@ import { notFound } from "next/navigation";
 
 import { currentUser } from "@clerk/nextjs/server";
 
+import { isBlockedByUser } from "@/lib/block-service";
 import { isFollowingUser } from "@/lib/follow-service";
 import { getUserByUsername } from "@/lib/user-service";
 
@@ -43,9 +45,12 @@ interface UserPageProps {
  * 2. Fetches the matching user record from the database.
  * 3. Returns a 404 response if no user is found.
  * 4. Resolves the authenticated viewer (if any) to determine whether
- *    follow controls should be displayed.
- * 5. Only checks follow status and renders follow/unfollow controls when
- *    the viewer is authenticated and is not viewing their own profile.
+ *    follow/block controls should be displayed.
+ * 5. Only checks follow and block status, and renders follow/unfollow
+ *    controls, when the viewer is authenticated and is not viewing their
+ *    own profile.
+ * 6. Checks block status for any authenticated viewer, including when
+ *    viewing their own profile.
  *
  * @async
  * @component
@@ -71,21 +76,29 @@ export default async function UserPage({ params }: UserPageProps) {
   // Resolve the authenticated viewer (null when not signed in).
   const viewer = await currentUser();
 
-  // Only check follow status and show controls for authenticated viewers
-  // who are not viewing their own profile.
+  // Determine whether the viewer is looking at their own profile.
+  // Follow controls are only shown for authenticated viewers on other profiles.
   const isOwnProfile = viewer?.id === user.externalUserId;
   const showFollowControls = viewer && !isOwnProfile;
 
+  // Check follow status only when follow controls are visible,
+  // to avoid an unnecessary service call.
   const isFollowing = showFollowControls
     ? await isFollowingUser(user.id)
     : false;
+
+  // Check whether the authenticated viewer is blocked by the target user.
+  // Only applicable when a viewer is signed in.
+  const isBlockedByThisUser = viewer ? await isBlockedByUser(user.id) : false;
 
   return (
     <div className="flex flex-col gap-y-4">
       <p>username: {user.username}</p>
       <p>user ID: {user.id}</p>
       <p>is following: {`${isFollowing}`}</p>
-      {/* Follow/Unfollow button — only for authenticated viewers on other profiles */}
+      <p>is blocked by user: {`${isBlockedByThisUser}`}</p>
+      {/* Follow/Unfollow and Block buttons — only rendered for authenticated
+          viewers who are not viewing their own profile. */}
       {showFollowControls && (
         <Actions isFollowing={isFollowing} userId={user.id} />
       )}
