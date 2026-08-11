@@ -50,7 +50,7 @@ interface ContainerProps {
  *   <DashboardPage />
  * </Container>
  */
-export function Container({ children }: ContainerProps) {
+export function Container({ children }: ContainerProps): React.JSX.Element {
   /**
    * Sidebar state and control actions from the creator sidebar store.
    *

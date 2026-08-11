@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { Hint } from "@/components/hint";
 import { LiveBadge } from "@/components/live-badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,6 +39,7 @@ interface UserItemProps {
  * - Highlights the item with an accent background when the current route matches the user's profile.
  * - Adapts layout based on the sidebar's collapsed state (icon-only vs. icon + label).
  * - Displays a `LiveBadge` next to the username when the user is live and the sidebar is expanded.
+ * - Displays a `Hint` tooltip with the username when hovered in collapsed state.
  *
  * @param {UserItemProps} props - Props for rendering the user item.
  * @returns {JSX.Element} A styled button link representing a sidebar user entry.
@@ -56,7 +58,7 @@ export function UserItem({ username, imageUrl, isLive }: UserItemProps) {
   const href = `/${username}`;
   const isActive = pathname === href;
 
-  return (
+  const content = (
     <Button
       asChild
       className={cn(
@@ -85,6 +87,16 @@ export function UserItem({ username, imageUrl, isLive }: UserItemProps) {
       </Link>
     </Button>
   );
+
+  if (collapsed) {
+    return (
+      <Hint asChild label={username} side="right">
+        {content}
+      </Hint>
+    );
+  }
+
+  return content;
 }
 
 /**

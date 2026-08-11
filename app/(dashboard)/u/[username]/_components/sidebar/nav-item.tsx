@@ -9,6 +9,7 @@ import Link from "next/link";
 
 import { LucideIcon } from "lucide-react";
 
+import { Hint } from "@/components/hint";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -33,7 +34,7 @@ interface NavItemProps {
 /**
  * NavItem component that renders a single navigation link in the sidebar.
  * Adapts its layout based on the sidebar's collapsed state:
- * - When collapsed: shows only the icon, centered.
+ * - When collapsed: shows only the icon, centered, with a Hint tooltip on hover.
  * - When expanded: shows icon and label, left-aligned.
  * Highlights with accent background when the current route matches its href.
  *
@@ -55,26 +56,36 @@ interface NavItemProps {
 export function NavItem({ icon: Icon, label, href, isActive }: NavItemProps) {
   const { collapsed } = useCreatorSidebar((state) => state);
 
+  const content = (
+    <Button
+      asChild
+      className={cn(
+        "h-12 w-full",
+        collapsed ? "justify-center" : "justify-start",
+        isActive && "bg-accent",
+      )}
+      variant="ghost"
+    >
+      <Link aria-label={collapsed ? label : undefined} href={href}>
+        <div className="flex items-center gap-x-4">
+          {/* Navigation icon with responsive margin based on sidebar state */}
+          <Icon className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-2")} />
+          {/* Label is hidden when the sidebar is collapsed */}
+          {!collapsed && <span>{label}</span>}
+        </div>
+      </Link>
+    </Button>
+  );
+
   return (
     <li>
-      <Button
-        asChild
-        className={cn(
-          "h-12 w-full",
-          collapsed ? "justify-center" : "justify-start",
-          isActive && "bg-accent",
-        )}
-        variant="ghost"
-      >
-        <Link aria-label={collapsed ? label : undefined} href={href}>
-          <div className="flex items-center gap-x-4">
-            {/* Navigation icon with responsive margin based on sidebar state */}
-            <Icon className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-2")} />
-            {/* Label is hidden when the sidebar is collapsed */}
-            {!collapsed && <span>{label}</span>}
-          </div>
-        </Link>
-      </Button>
+      {collapsed ? (
+        <Hint asChild label={label} side="right">
+          {content}
+        </Hint>
+      ) : (
+        content
+      )}
     </li>
   );
 }

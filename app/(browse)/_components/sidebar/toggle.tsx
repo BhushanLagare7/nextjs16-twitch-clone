@@ -33,7 +33,7 @@ import { useSidebar } from "@/store/use-sidebar";
  * // Rendered inside the Sidebar component via Wrapper
  * <Toggle />
  */
-export function Toggle() {
+export function Toggle(): React.JSX.Element {
   /**
    * Sidebar state and actions from the global sidebar store.
    * - `collapsed`: Whether the sidebar is currently collapsed.
@@ -84,11 +84,11 @@ export function Toggle() {
   );
 }
 
-export function ToggleSkeleton() {
+export function ToggleSkeleton(): React.JSX.Element {
   return (
     <div className="mb-2 hidden w-full items-center justify-between p-3 pl-6 lg:flex">
       <Skeleton className="h-6 w-25" />
-      <Skeleton className="h-6 w-6" />
+      <Skeleton className="size-6" />
     </div>
   );
 }

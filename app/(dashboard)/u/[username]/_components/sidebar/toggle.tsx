@@ -28,7 +28,7 @@ import { useCreatorSidebar } from "@/store/use-creator-sidebar";
  * // Usage in Sidebar
  * <Toggle />
  */
-export function Toggle() {
+export function Toggle(): React.JSX.Element {
   const { collapsed, onExpand, onCollapse } = useCreatorSidebar(
     (state) => state,
   );

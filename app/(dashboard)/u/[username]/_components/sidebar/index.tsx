@@ -19,7 +19,7 @@ import { Wrapper } from "./wrapper";
  * // Usage in a dashboard layout
  * <Sidebar />
  */
-export function Sidebar() {
+export function Sidebar(): React.JSX.Element {
   return (
     <Wrapper>
       {/* Controls sidebar expanded/collapsed state */}

@@ -34,7 +34,7 @@ import { NavItem, NavItemSkeleton } from "./nav-item";
  * // Usage in Sidebar
  * <Navigation />
  */
-export function Navigation() {
+export function Navigation(): React.JSX.Element {
   const pathname = usePathname();
   const { user } = useUser();
 
