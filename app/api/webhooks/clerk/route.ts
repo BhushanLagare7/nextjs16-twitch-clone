@@ -69,6 +69,11 @@ export async function POST(req: NextRequest) {
           create: {
             externalUserId: evt.data.id,
             ...data,
+            stream: {
+              create: {
+                name: `${data.username}'s stream`,
+              },
+            },
           },
           update: data,
         });
