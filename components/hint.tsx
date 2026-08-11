@@ -87,7 +87,7 @@ export function Hint({ label, children, asChild, side, align }: HintProps) {
         {/* Content: the tooltip bubble with custom light/dark styling */}
         <TooltipContent
           align={align}
-          className="border border-border/50 bg-white text-black shadow-md dark:border-none"
+          className="border border-border/50 bg-white text-black shadow-md dark:border-none fill-white [&_svg]:fill-white [&_svg]:bg-white"
           side={side}
         >
           <p className="font-semibold">{label}</p>
