@@ -119,32 +119,57 @@ export async function resetIngresses(hostIdentity: string) {
 }
 
 /**
+ * In-process per-user locks to serialize ingress replacement.
+ * Each key is a user ID; the value is a promise chain that
+ * ensures only one createIngress operation runs at a time per user.
+ *
+ * @type {Map<string, Promise<void>>}
+ */
+const userLocks = new Map<string, Promise<void>>();
+
+/**
+ * Supported ingress input types for this application.
+ * URL_INPUT is excluded because the UI does not provide
+ * the required source URL.
+ */
+const SUPPORTED_INGRESS_TYPES = new Set([
+  IngressInput.RTMP_INPUT,
+  IngressInput.WHIP_INPUT,
+]);
+
+/**
  * Creates a new LiveKit ingress endpoint for the currently authenticated
  * user, allowing them to stream via RTMP or WHIP protocols.
  *
  * Before creation, any existing ingresses/rooms for the user are reset
  * via {@link resetIngresses} to avoid conflicting stream configurations.
+ * Concurrent calls for the same user are serialized via an in-process
+ * per-user lock to prevent races.
  *
  * Depending on the `ingressType`:
  * - `WHIP_INPUT`: Transcoding is disabled (WHIP clients typically send
  *   pre-encoded, browser-compatible media).
- * - Other types (e.g. `RTMP_INPUT`): Video and audio encoding presets
- *   are explicitly configured for compatibility and quality
- *   (1080p H.264 video, stereo Opus audio).
+ * - `RTMP_INPUT`: Video and audio encoding presets are explicitly
+ *   configured for compatibility and quality (1080p H.264 video,
+ *   stereo Opus audio).
  *
  * On success, the generated ingress details (server URL and stream key)
  * are persisted to the database against the user's stream record, and
  * the `/u/[username]/keys` page cache is invalidated so the UI reflects
- * the new credentials.
+ * the new credentials. If the database update fails, the newly created
+ * LiveKit ingress is deleted before the error propagates.
  *
  * @async
  * @function createIngress
- * @param {IngressInput} ingressType - The type of ingress to create
- *                                     (e.g. `IngressInput.RTMP_INPUT` or
- *                                     `IngressInput.WHIP_INPUT`).
- * @returns {Promise<void>} Resolves once the ingress has been created
- *                           and the stream record has been updated.
+ * @param {IngressInput} ingressType - The type of ingress to create.
+ *        Only `IngressInput.RTMP_INPUT` and `IngressInput.WHIP_INPUT`
+ *        are supported.
+ * @returns {Promise<{ ingressId: string; url: string; streamKey: string }>}
+ *          A plain, serializable object containing the created ingress's
+ *          ID, server URL, and stream key.
  *
+ * @throws {Error} If `ingressType` is not a supported type
+ *                 (e.g. `URL_INPUT`).
  * @throws {Error} If the authenticated user cannot be resolved
  *                 (via {@link getSelf}).
  * @throws {Error} If ingress creation fails or returns incomplete data
@@ -155,66 +180,114 @@ export async function resetIngresses(hostIdentity: string) {
  * console.log(ingress.url, ingress.streamKey);
  */
 export async function createIngress(ingressType: IngressInput) {
+  // Validate ingressType before touching auth or existing resources.
+  if (!SUPPORTED_INGRESS_TYPES.has(ingressType)) {
+    throw new Error(
+      `Unsupported ingress type: ${ingressType}. Only RTMP_INPUT and WHIP_INPUT are supported.`,
+    );
+  }
+
   // Resolve the currently authenticated user.
   const self = await getSelf();
 
-  // Clear out any pre-existing ingress/room state for this user
-  // to prevent duplicate or stale stream connections.
-  await resetIngresses(self.id);
-
-  /**
-   * Base configuration shared across all ingress types.
-   * @type {CreateIngressOptions}
-   */
-  const options: CreateIngressOptions = {
-    name: self.username,
-    roomName: self.id,
-    participantName: self.username,
-    participantIdentity: self.id,
-  };
-
-  if (ingressType === IngressInput.WHIP_INPUT) {
-    // WHIP inputs are typically sent pre-encoded; disable transcoding
-    // to reduce server load and latency.
-    options.enableTranscoding = false;
-  } else {
-    // For RTMP (and other non-WHIP) inputs, explicitly configure
-    // video/audio encoding presets for consistent output quality.
-    options.video = new IngressVideoOptions({
-      source: TrackSource.CAMERA,
-      encodingOptions: {
-        case: "preset",
-        value: IngressVideoEncodingPreset.H264_1080P_30FPS_3_LAYERS,
-      },
-    });
-    options.audio = new IngressAudioOptions({
-      source: TrackSource.MICROPHONE,
-      encodingOptions: {
-        case: "preset",
-        value: IngressAudioEncodingPreset.OPUS_STEREO_96KBPS,
-      },
-    });
-  }
-
-  // Request ingress creation from the LiveKit server.
-  const ingress = await ingressClient.createIngress(ingressType, options);
-
-  // Validate that the server returned usable connection details.
-  if (!ingress || !ingress.url || !ingress.streamKey) {
-    throw new Error("Failed to create ingress");
-  }
-
-  // Persist the new ingress details to the user's stream record.
-  await db.stream.update({
-    where: { userId: self.id },
-    data: {
-      ingressId: ingress.ingressId,
-      serverUrl: ingress.url,
-      streamKey: ingress.streamKey,
-    },
+  // Serialize per-user to prevent concurrent replacements from
+  // racing and orphaning LiveKit resources.
+  const prev = userLocks.get(self.id) ?? Promise.resolve();
+  let releaseLock: () => void;
+  const gate = new Promise<void>((resolve) => {
+    releaseLock = resolve;
   });
+  userLocks.set(self.id, prev.then(() => gate));
 
-  // Invalidate the cached "keys" page so the new stream credentials
-  // are immediately visible to the user.
-  revalidatePath(`/u/${self.username}/keys`);
+  // Wait for any prior operation for this user to complete.
+  await prev;
+
+  try {
+    // Clear out any pre-existing ingress/room state for this user
+    // to prevent duplicate or stale stream connections.
+    await resetIngresses(self.id);
+
+    /**
+     * Base configuration shared across all ingress types.
+     * @type {CreateIngressOptions}
+     */
+    const options: CreateIngressOptions = {
+      name: self.username,
+      roomName: self.id,
+      participantName: self.username,
+      participantIdentity: self.id,
+    };
+
+    if (ingressType === IngressInput.WHIP_INPUT) {
+      // WHIP inputs are typically sent pre-encoded; disable transcoding
+      // to reduce server load and latency.
+      options.enableTranscoding = false;
+    } else {
+      // For RTMP (and other non-WHIP) inputs, explicitly configure
+      // video/audio encoding presets for consistent output quality.
+      options.video = new IngressVideoOptions({
+        source: TrackSource.CAMERA,
+        encodingOptions: {
+          case: "preset",
+          value: IngressVideoEncodingPreset.H264_1080P_30FPS_3_LAYERS,
+        },
+      });
+      options.audio = new IngressAudioOptions({
+        source: TrackSource.MICROPHONE,
+        encodingOptions: {
+          case: "preset",
+          value: IngressAudioEncodingPreset.OPUS_STEREO_96KBPS,
+        },
+      });
+    }
+
+    // Request ingress creation from the LiveKit server.
+    const ingress = await ingressClient.createIngress(ingressType, options);
+
+    // Validate that the server returned usable connection details.
+    if (!ingress || !ingress.url || !ingress.streamKey) {
+      throw new Error("Failed to create ingress");
+    }
+
+    // Persist the new ingress details to the user's stream record.
+    // If this fails, delete the newly created ingress to avoid orphans.
+    try {
+      await db.stream.update({
+        where: { userId: self.id },
+        data: {
+          ingressId: ingress.ingressId,
+          serverUrl: ingress.url,
+          streamKey: ingress.streamKey,
+        },
+      });
+    } catch (dbError) {
+      // Best-effort cleanup: remove the LiveKit ingress we just created
+      // so it doesn't become an orphaned resource.
+      if (ingress.ingressId) {
+        await ingressClient
+          .deleteIngress(ingress.ingressId)
+          .catch(() => {}); // Swallow cleanup errors to propagate the original.
+      }
+      throw dbError;
+    }
+
+    // Invalidate the cached "keys" page so the new stream credentials
+    // are immediately visible to the user.
+    revalidatePath(`/u/${self.username}/keys`);
+
+    // Return a plain, serializable object for use by callers
+    // (including client components via server actions).
+    return {
+      ingressId: ingress.ingressId!,
+      url: ingress.url,
+      streamKey: ingress.streamKey,
+    };
+  } finally {
+    // Release the per-user lock regardless of success or failure.
+    releaseLock!();
+    // Clean up the lock map entry if no other operation is queued.
+    if (userLocks.get(self.id) === prev.then(() => gate)) {
+      userLocks.delete(self.id);
+    }
+  }
 }

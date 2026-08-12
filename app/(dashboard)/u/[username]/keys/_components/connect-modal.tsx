@@ -116,14 +116,15 @@ export function ConnectModal() {
    * @returns {void}
    */
   const onSubmit = () => {
-    startTransition(() => {
-      createIngress(parseInt(ingressType))
-        .then(() => {
-          toast.success("Ingress created");
-          // Programmatically trigger the dialog's close button.
-          closeRef?.current?.click();
-        })
-        .catch(() => toast.error("Something went wrong"));
+    startTransition(async () => {
+      try {
+        await createIngress(parseInt(ingressType));
+        toast.success("Ingress created");
+        // Programmatically trigger the dialog's close button.
+        closeRef?.current?.click();
+      } catch {
+        toast.error("Something went wrong");
+      }
     });
   };
 
