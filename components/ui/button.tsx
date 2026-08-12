@@ -141,7 +141,7 @@ const buttonVariants = cva(
          * Primary button variant — blue background with hover effect.
          * Hover opacity is reduced to 80% on hover for a subtle effect.
          */
-        primary: "text-white bg-blue-600 hover:bg-blue-600/80",
+        primary: "text-white bg-blue-600 hover:bg-blue-700",
       },
 
       /**
