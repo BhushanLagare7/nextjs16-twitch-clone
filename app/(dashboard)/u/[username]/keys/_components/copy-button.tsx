@@ -41,17 +41,21 @@ export function CopyButton({ value }: CopyButtonProps) {
    * Writes the provided value to the clipboard and temporarily
    * sets `isCopied` to true for visual feedback.
    */
-  const onCopy = () => {
+  const onCopy = async () => {
     // Prevent copy if no value is provided
     if (!value) return;
 
-    setIsCopied(true);
-    navigator.clipboard.writeText(value);
+    try {
+      await navigator.clipboard.writeText(value);
+      setIsCopied(true);
 
-    // Reset the copied state after 1 second
-    setTimeout(() => {
-      setIsCopied(false);
-    }, 1000);
+      // Reset the copied state after 1 second
+      setTimeout(() => {
+        setIsCopied(false);
+      }, 1000);
+    } catch {
+      // Clipboard write failed — leave confirmation state unset
+    }
   };
 
   // Show confirmation icon while copied, otherwise show copy icon
@@ -59,6 +63,7 @@ export function CopyButton({ value }: CopyButtonProps) {
 
   return (
     <Button
+      aria-label={isCopied ? "Copied" : "Copy to clipboard"}
       disabled={!value || isCopied}
       size="sm"
       variant="ghost"

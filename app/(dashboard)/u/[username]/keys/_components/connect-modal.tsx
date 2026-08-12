@@ -9,7 +9,7 @@
 
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangleIcon } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -68,7 +68,7 @@ export function ConnectModal() {
 
         {/* Warning: Generating a new connection resets all active streams */}
         <Alert>
-          <AlertTriangle className="h-4 w-4" />
+          <AlertTriangleIcon className="size-4" />
           <AlertTitle>Warning!</AlertTitle>
           <AlertDescription>
             This action will reset all active streams using the current
