@@ -1,16 +1,31 @@
 /**
- * @file _components/connect-modal.tsx
- * @description Modal dialog for generating a new stream ingress connection.
+ * @file connect-modal.tsx
+ * @module components/ConnectModal
+ * @description
+ * Client-side modal component that allows a user to generate new
+ * streaming connection credentials (RTMP or WHIP) via the
+ * {@link createIngress} server action.
  *
- * Allows the user to select an ingress type (RTMP or WHIP) and generate
- * a new connection. Displays a warning that generating a new connection
- * will reset all active streams using the current connection.
+ * Generating a new connection will reset any existing active stream
+ * connections tied to the current ingress configuration.
+ *
+ * @requires react
+ * @requires livekit-server-sdk
+ * @requires lucide-react
+ * @requires sonner
+ * @requires @/actions/ingress
+ * @requires @/components/ui/*
  */
 
 "use client";
 
-import { AlertTriangleIcon } from "lucide-react";
+import { ComponentRef, useRef, useState, useTransition } from "react";
 
+import { IngressInput } from "livekit-server-sdk";
+import { AlertTriangleIcon } from "lucide-react";
+import { toast } from "sonner";
+
+import { createIngress } from "@/actions/ingress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,17 +45,88 @@ import {
 } from "@/components/ui/select";
 
 /**
- * ConnectModal - Client component that renders a dialog for generating
- * a new stream ingress connection.
+ * String representation of the RTMP ingress type enum value.
+ * Stored as a string because the `<Select>` component requires
+ * string-based option values.
+ * @constant {string}
+ */
+const RTMP = String(IngressInput.RTMP_INPUT);
+
+/**
+ * String representation of the WHIP ingress type enum value.
+ * @constant {string}
+ */
+const WHIP = String(IngressInput.WHIP_INPUT);
+
+/**
+ * Union type representing the selectable ingress connection types
+ * available in the modal's dropdown.
  *
- * Features:
- * - Ingress type selection (RTMP or WHIP)
- * - Warning alert about resetting active streams
- * - Cancel and Generate action buttons
+ * @typedef {(typeof RTMP | typeof WHIP)} IngressType
+ */
+type IngressType = typeof RTMP | typeof WHIP;
+
+/**
+ * ConnectModal Component
  *
- * @returns {JSX.Element} A dialog modal triggered by a "Generate connection" button.
+ * Renders a button that opens a dialog allowing the user to select
+ * an ingress protocol (RTMP or WHIP) and generate new streaming
+ * connection credentials. On success, the newly generated credentials
+ * are persisted server-side and the dialog is automatically closed.
+ *
+ * @component
+ * @returns {JSX.Element} The rendered connect modal, including trigger
+ *                         button, dialog content, protocol selector,
+ *                         warning alert, and action buttons.
+ *
+ * @example
+ * <ConnectModal />
  */
 export function ConnectModal() {
+  /**
+   * Ref to the dialog's close button, used to programmatically
+   * dismiss the modal after a successful ingress creation.
+   * @type {React.RefObject<HTMLButtonElement>}
+   */
+  const closeRef = useRef<ComponentRef<"button">>(null);
+
+  /**
+   * React transition state used to track the pending status of the
+   * ingress creation request without blocking the UI thread.
+   * @type {[boolean, React.TransitionStartFunction]}
+   */
+  const [isPending, startTransition] = useTransition();
+
+  /**
+   * Currently selected ingress type (RTMP or WHIP).
+   * Defaults to RTMP.
+   * @type {[IngressType, React.Dispatch<React.SetStateAction<IngressType>>]}
+   */
+  const [ingressType, setIngressType] = useState<IngressType>(RTMP);
+
+  /**
+   * Handles form submission when the user clicks "Generate".
+   *
+   * Wraps the {@link createIngress} server action call in a React
+   * transition to avoid blocking UI updates. Displays a success or
+   * error toast notification based on the outcome, and closes the
+   * dialog automatically on success.
+   *
+   * @function onSubmit
+   * @returns {void}
+   */
+  const onSubmit = () => {
+    startTransition(() => {
+      createIngress(parseInt(ingressType))
+        .then(() => {
+          toast.success("Ingress created");
+          // Programmatically trigger the dialog's close button.
+          closeRef?.current?.click();
+        })
+        .catch(() => toast.error("Something went wrong"));
+    });
+  };
+
   return (
     <Dialog>
       {/* Button that opens the connection generation dialog */}
@@ -53,20 +139,22 @@ export function ConnectModal() {
           <DialogTitle>Generate connection</DialogTitle>
         </DialogHeader>
 
-        {/* Dropdown to select the ingress protocol type */}
-        <Select>
+        {/* Dropdown to select the desired ingress protocol */}
+        <Select
+          disabled={isPending}
+          value={ingressType}
+          onValueChange={(value) => setIngressType(value)}
+        >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Ingress Type" />
           </SelectTrigger>
           <SelectContent>
-            {/* Real-Time Messaging Protocol option */}
-            <SelectItem value="RTMP">RTMP</SelectItem>
-            {/* WebRTC-HTTP Ingress Protocol option */}
-            <SelectItem value="WHIP">WHIP</SelectItem>
+            <SelectItem value={RTMP}>RTMP</SelectItem>
+            <SelectItem value={WHIP}>WHIP</SelectItem>
           </SelectContent>
         </Select>
 
-        {/* Warning: Generating a new connection resets all active streams */}
+        {/* Warning notifying the user of the destructive side-effect */}
         <Alert>
           <AlertTriangleIcon className="size-4" />
           <AlertTitle>Warning!</AlertTitle>
@@ -76,16 +164,12 @@ export function ConnectModal() {
           </AlertDescription>
         </Alert>
 
-        {/* Dialog action buttons */}
+        {/* Action buttons: cancel (closes dialog) and submit (generates ingress) */}
         <div className="flex justify-between">
-          {/* Closes the dialog without making any changes */}
-          <DialogClose asChild>
+          <DialogClose ref={closeRef} asChild>
             <Button variant="ghost">Cancel</Button>
           </DialogClose>
-
-          {/* Triggers the connection generation logic */}
-          {/* TODO: Implement the generate connection handler */}
-          <Button variant="primary" onClick={() => {}}>
+          <Button disabled={isPending} variant="primary" onClick={onSubmit}>
             Generate
           </Button>
         </div>
