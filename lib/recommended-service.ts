@@ -29,9 +29,9 @@ export const RECOMMENDED_LIMIT = 10;
  * throws (e.g. no active session), the error is silently caught and the
  * function falls back to unauthenticated mode.
  *
- * @returns A promise resolving to an array of `User` records sorted in
- * descending order by `createdAt`, containing at most
- * {@link RECOMMENDED_LIMIT} entries.
+ * @returns A promise resolving to an array of `User` records (including
+ * their associated `stream` relation) sorted in descending order by
+ * `createdAt`, containing at most {@link RECOMMENDED_LIMIT} entries.
  */
 export async function getRecommended() {
   let userId: string | null = null;
@@ -79,6 +79,9 @@ export async function getRecommended() {
 
   const users = await db.user.findMany({
     where,
+    include: {
+      stream: true,
+    },
     orderBy: {
       createdAt: "desc",
     },

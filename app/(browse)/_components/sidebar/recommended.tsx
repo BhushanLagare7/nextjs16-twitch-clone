@@ -5,15 +5,17 @@
 
 "use client";
 
-import { User } from "@/generated/prisma/client";
+import { Stream, User } from "@/generated/prisma/client";
 import { useSidebar } from "@/store/use-sidebar";
 
 import { UserItem, UserItemSkeleton } from "./user-item";
 
 /** Props for the Recommended component. */
 interface RecommendedProps {
-  /** Array of user objects to display as recommended. */
-  data: User[];
+  /** Array of user objects (including their associated stream data) to display as recommended. */
+  data: (User & {
+    stream: Stream | null;
+  })[];
 }
 
 /**
@@ -51,7 +53,7 @@ export function Recommended({ data }: RecommendedProps) {
           <UserItem
             key={user.id}
             imageUrl={user.imageUrl}
-            isLive={false}
+            isLive={user.stream?.isLive}
             username={user.username}
           />
         ))}

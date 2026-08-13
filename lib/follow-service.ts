@@ -8,7 +8,8 @@ import { db } from "@/lib/db";
  * caught and results in an empty array being returned.
  *
  * @returns An array of follow records (including the `following` user
- * relation), or an empty array if the lookup fails for any reason.
+ * relation with their associated `stream` data), or an empty array if
+ * the lookup fails for any reason.
  */
 export async function getFollowedUsers() {
   try {
@@ -26,7 +27,11 @@ export async function getFollowedUsers() {
         },
       },
       include: {
-        following: true,
+        following: {
+          include: {
+            stream: true,
+          },
+        },
       },
     });
 
