@@ -10,6 +10,7 @@ import { SignInButton, UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { ClapperboardIcon } from "lucide-react";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -42,6 +43,7 @@ export const Actions = async () => {
 
   return (
     <div className="ml-4 flex items-center justify-end gap-x-2 lg:ml-0">
+      <ThemeToggle />
       {/* Render login button for unauthenticated users */}
       {!user && (
         <SignInButton>

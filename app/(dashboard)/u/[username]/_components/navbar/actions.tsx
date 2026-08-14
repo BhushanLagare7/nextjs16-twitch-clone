@@ -14,6 +14,7 @@ import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { LogOutIcon } from "lucide-react";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -35,6 +36,7 @@ import { Button } from "@/components/ui/button";
 export function Actions() {
   return (
     <div className="flex items-center justify-end gap-x-2">
+      <ThemeToggle />
       {/* Exit button — navigates back to the home page and out of the
           creator dashboard. */}
       <Button
