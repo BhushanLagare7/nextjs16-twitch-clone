@@ -87,9 +87,10 @@ export async function createViewerToken(hostIdentity: string) {
   }
 
   // Construct the access token with the resolved identity and display name.
-  const token = new AccessToken(apiKey!, apiSecret!, {
+  const token = new AccessToken(apiKey, apiSecret, {
     identity: isHost ? `host-${self.id}` : self.id,
     name: self.username,
+    ttl: "15m",
   });
 
   // Grant viewer-level permissions: join the room and send data messages,
@@ -101,5 +102,5 @@ export async function createViewerToken(hostIdentity: string) {
     canPublishData: true,
   });
 
-  return await Promise.resolve(token.toJwt());
+  return token.toJwt();
 }

@@ -23,12 +23,14 @@ import { createViewerToken } from "@/actions/token";
  * ### Lifecycle
  * 1. On mount (or when `hostIdentity` changes), calls the
  *    {@link createViewerToken} server action to obtain a signed JWT.
- * 2. Decodes the JWT to extract the `name` (display name) and `jti`
- *    (JWT ID, used as the LiveKit participant identity).
+ * 2. Decodes the JWT to extract the `name` (display name) and `sub`
+ *    (`sub` claim, used as the LiveKit participant identity).
  * 3. Stores each value in local state; components re-render automatically
  *    once all values are resolved.
- * 4. On failure, displays a toast notification and leaves state as empty
+ * 4. On failure, displays a toast notification and resets state to empty
  *    strings, which consumers should treat as a loading/error indicator.
+ * 5. Stale requests (from a previous `hostIdentity`) are ignored via a
+ *    cancellation flag set in the effect cleanup.
  *
  * @function useViewerToken
  *
@@ -41,7 +43,7 @@ import { createViewerToken } from "@/actions/token";
  *   - `token` — The raw signed LiveKit JWT string (empty until resolved).
  *   - `name` — The viewer's display name decoded from the JWT (empty until
  *     resolved).
- *   - `identity` — The viewer's LiveKit participant identity (`jti` claim),
+ *   - `identity` — The viewer's LiveKit participant identity (`sub` claim),
  *     empty until resolved.
  *
  * @example
@@ -57,33 +59,50 @@ export function useViewerToken(hostIdentity: string) {
   const [identity, setIdentity] = useState("");
 
   useEffect(() => {
+    // Clear stale state immediately when the host changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setToken("");
+    setName("");
+    setIdentity("");
+
+    let cancelled = false;
+
     const createToken = async () => {
       try {
         const viewerToken = await createViewerToken(hostIdentity);
-        setToken(viewerToken);
 
-        // Decode the JWT to retrieve the viewer's display name and identity.
+        if (cancelled) return;
+
+        // Decode the JWT before committing any state so a decode failure
+        // never leaves the hook in a partially-updated state.
         const decodedToken = jwtDecode(viewerToken) as JwtPayload & {
           name?: string;
         };
-        const name = decodedToken?.name;
 
-        // `jti` (JWT ID) is repurposed by LiveKit as the participant identity.
-        const identity = decodedToken.jti;
+        // LiveKit stores the participant identity in the `sub` (subject) claim.
+        const participantIdentity = decodedToken.sub;
+        const participantName = decodedToken?.name;
 
-        if (identity) {
-          setIdentity(identity);
+        setToken(viewerToken);
+
+        if (participantIdentity) {
+          setIdentity(participantIdentity);
         }
 
-        if (name) {
-          setName(name);
+        if (participantName) {
+          setName(participantName);
         }
       } catch {
+        if (cancelled) return;
         toast.error("Something went wrong");
       }
     };
 
     createToken();
+
+    return () => {
+      cancelled = true;
+    };
   }, [hostIdentity]);
 
   return {
