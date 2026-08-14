@@ -15,10 +15,15 @@ import { UserItem, UserItemSkeleton } from "./user-item";
  */
 interface FollowingProps {
   /**
-   * Array of Follow records, each joined with the followed User's data.
+   * Array of Follow records, each joined with the followed User's data
+   * and their associated stream (for live status indicators).
    * Fetched server-side and passed down from the parent Sidebar component.
    */
-  data: (Follow & { following: User })[];
+  data: (Follow & {
+    following: User & {
+      stream: { isLive: boolean } | null;
+    };
+  })[];
 }
 
 /**
@@ -34,8 +39,8 @@ interface FollowingProps {
  * - The collapsed state is read from the global `useSidebar` Zustand store.
  *
  * @param {FollowingProps} props - Component props.
- * @param {(Follow & { following: User })[]} props.data - Array of follow relationships
- *   including the followed user's details (id, imageUrl, username).
+ * @param {(Follow & { following: User & { stream: Stream | null } })[]} props.data - Array of follow relationships
+ *   including the followed user's details and their stream live status.
  * @returns {JSX.Element | null} The following list UI, or `null` if there are no followed users.
  *
  * @example
@@ -63,6 +68,7 @@ export function Following({ data }: FollowingProps) {
           <li key={follow.following.id}>
             <UserItem
               imageUrl={follow.following.imageUrl}
+              isLive={follow.following.stream?.isLive}
               username={follow.following.username}
             />
           </li>
