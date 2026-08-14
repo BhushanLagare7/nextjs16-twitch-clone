@@ -5,7 +5,7 @@
 
 "use client";
 
-import { Stream, User } from "@/generated/prisma/client";
+import { User } from "@/generated/prisma/client";
 import { useSidebar } from "@/store/use-sidebar";
 
 import { UserItem, UserItemSkeleton } from "./user-item";
@@ -14,7 +14,7 @@ import { UserItem, UserItemSkeleton } from "./user-item";
 interface RecommendedProps {
   /** Array of user objects (including their associated stream data) to display as recommended. */
   data: (User & {
-    stream: Stream | null;
+    stream: { isLive: boolean } | null;
   })[];
 }
 

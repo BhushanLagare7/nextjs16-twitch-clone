@@ -274,10 +274,8 @@ export async function createIngress(
   const gate = new Promise<void>((resolve) => {
     releaseLock = resolve;
   });
-  userLocks.set(
-    self.id,
-    prev.then(() => gate),
-  );
+  const chained = prev.then(() => gate);
+  userLocks.set(self.id, chained);
 
   // Wait for any prior operation for this user to complete before
   // proceeding with reset + creation.
@@ -339,6 +337,7 @@ export async function createIngress(
           ingressId: ingress.ingressId,
           serverUrl: ingress.url,
           streamKey: ingress.streamKey,
+          isLive: false,
         },
       });
     } catch (dbError) {
@@ -373,7 +372,7 @@ export async function createIngress(
     // queued behind this one (i.e. this invocation's chained promise is
     // still the one registered in the map). This prevents accidentally
     // deleting a newer lock registered by a subsequent concurrent call.
-    if (userLocks.get(self.id) === prev.then(() => gate)) {
+    if (userLocks.get(self.id) === chained) {
       userLocks.delete(self.id);
     }
   }

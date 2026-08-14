@@ -80,7 +80,9 @@ export async function getRecommended() {
   const users = await db.user.findMany({
     where,
     include: {
-      stream: true,
+      stream: {
+        select: { isLive: true },
+      },
     },
     orderBy: {
       createdAt: "desc",

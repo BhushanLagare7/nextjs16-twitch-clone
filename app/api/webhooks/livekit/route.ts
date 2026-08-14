@@ -35,10 +35,18 @@ async function setStreamLiveStatus(
   ingressId: string | undefined,
   isLive: boolean,
 ): Promise<void> {
-  await db.stream.update({
+  if (!ingressId) return;
+
+  const { count } = await db.stream.updateMany({
     where: { ingressId },
     data: { isLive },
   });
+
+  if (count === 0) {
+    console.warn(
+      `No stream found for ingressId "${ingressId}"; event ignored.`,
+    );
+  }
 }
 
 /**
@@ -53,7 +61,7 @@ async function setStreamLiveStatus(
  *
  * @param req - The incoming webhook request sent by LiveKit.
  * @returns
- *  - `400` if the "Authorization" header or ingress ID is missing.
+ *  - `400` if the "Authorization" header is missing.
  *  - `500` if signature verification or event processing fails.
  *  - `200` with body "OK" on successful processing.
  */
@@ -69,10 +77,6 @@ export async function POST(req: Request): Promise<Response> {
   try {
     const event = await receiver.receive(body, authorization);
     const ingressId = event.ingressInfo?.ingressId;
-
-    if (!ingressId) {
-      return new Response("No ingress ID", { status: 400 });
-    }
 
     switch (event.event) {
       case "ingress_started":
