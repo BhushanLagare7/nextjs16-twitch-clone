@@ -38,6 +38,42 @@ export async function getUserByUsername(username: string) {
     where: {
       username,
     },
+    include: {
+      stream: true,
+    },
+  });
+
+  return user;
+}
+
+/**
+ * Retrieves a single user record from the database by their internal ID.
+ *
+ * Performs a unique lookup using the `id` field (the database primary key).
+ * Returns `null` if no user with the given ID exists.
+ *
+ * @async
+ * @function getUserById
+ *
+ * @param {string} id - The unique internal database ID of the user.
+ *
+ * @returns {Promise<import("@prisma/client").User | null>} A promise that
+ *   resolves to the matching Prisma `User` record, or `null` if not found.
+ *
+ * @example
+ * const user = await getUserById("clx1abc2def3ghi4jkl5");
+ * if (!user) {
+ *   throw new Error("User not found");
+ * }
+ */
+export async function getUserById(id: string) {
+  const user = await db.user.findUnique({
+    where: {
+      id,
+    },
+    include: {
+      stream: true,
+    },
   });
 
   return user;
