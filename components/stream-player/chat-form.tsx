@@ -13,7 +13,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +73,7 @@ export function ChatForm({
   isDelayed,
 }: ChatFormProps) {
   const [isDelayBlocked, setIsDelayBlocked] = useState(false);
+  const delayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isFollowersOnlyAndNotFollowing = isFollowersOnly && !isFollowing;
   const isDisabled =
@@ -95,7 +96,8 @@ export function ChatForm({
 
     if (isDelayed && !isDelayBlocked) {
       setIsDelayBlocked(true);
-      setTimeout(() => {
+      delayTimerRef.current = setTimeout(() => {
+        delayTimerRef.current = null;
         setIsDelayBlocked(false);
         onSubmit();
       }, 3000);
@@ -103,6 +105,25 @@ export function ChatForm({
       onSubmit();
     }
   };
+
+  // Clear the pending delay timer when the form becomes disabled
+  // (e.g. followers-only gate kicks in) to avoid a stale onSubmit firing.
+  useEffect(() => {
+    if (isDisabled && delayTimerRef.current) {
+      clearTimeout(delayTimerRef.current);
+      delayTimerRef.current = null;
+      setIsDelayBlocked(false);
+    }
+  }, [isDisabled]);
+
+  // Clean up the delay timer on unmount.
+  useEffect(() => {
+    return () => {
+      if (delayTimerRef.current) {
+        clearTimeout(delayTimerRef.current);
+      }
+    };
+  }, []);
 
   if (isHidden) {
     return null;

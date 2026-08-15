@@ -96,15 +96,19 @@ export function Chat({
 
   // Sort messages newest-first for use with the column-reverse ChatList.
   const reversedMessages = useMemo(() => {
-    return messages.sort((a, b) => b.timestamp - a.timestamp);
+    return [...messages].sort((a, b) => b.timestamp - a.timestamp);
   }, [messages]);
 
   /** Sends the current input value via LiveKit and clears the input. */
-  const onSubmit = () => {
+  const onSubmit = async () => {
     if (!send) return;
 
-    send(value);
-    setValue("");
+    try {
+      await send(value);
+      setValue("");
+    } catch (error) {
+      console.error("[Chat] Failed to send message:", error);
+    }
   };
 
   /** Updates the controlled chat input value. */

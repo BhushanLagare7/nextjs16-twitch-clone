@@ -115,7 +115,10 @@ export function StreamPlayer({ user, stream, isFollowing }: StreamPlayerProps) {
         onDisconnected={onDisconnected}
         onError={onError}
       >
-        <div className="hidden-scrollbar col-span-1 space-y-4 pb-10 lg:col-span-2 lg:overflow-y-auto xl:col-span-2 2xl:col-span-5">
+        <div className={cn(
+          "hidden-scrollbar col-span-1 space-y-4 pb-10 lg:col-span-2 lg:overflow-y-auto xl:col-span-2 2xl:col-span-5",
+          collapsed && "2xl:col-span-2",
+        )}>
           <Video hostIdentity={user.id} hostName={user.username} />
         </div>
         <div className={cn("col-span-1", collapsed && "hidden")}>

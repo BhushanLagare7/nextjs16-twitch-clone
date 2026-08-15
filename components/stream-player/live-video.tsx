@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useTracks } from "@livekit/components-react";
 import { Participant, Track } from "livekit-client";
-import { useEventListener } from "usehooks-ts";
 
 import { FullscreenControl } from "./fullscreen-control";
 import { VolumeControl } from "./volume-control";
@@ -73,14 +72,15 @@ export function LiveVideo({ participant }: LiveVideoProps) {
    * Toggles between muted (0) and a default 50% volume.
    */
   const toggleMute = useCallback(() => {
-    setVolume((currentVolume) => {
-      const nextVolume = currentVolume === 0 ? 50 : 0;
-      if (videoRef.current) {
-        applyVolumeToVideo(videoRef.current, nextVolume);
-      }
-      return nextVolume;
-    });
+    setVolume((currentVolume) => (currentVolume === 0 ? 50 : 0));
   }, []);
+
+  // Sync the <video> element whenever volume state changes.
+  useEffect(() => {
+    if (videoRef.current) {
+      applyVolumeToVideo(videoRef.current, volume);
+    }
+  }, [volume]);
 
   // Start muted by default to comply with browser autoplay policies.
   useEffect(() => {
@@ -101,16 +101,15 @@ export function LiveVideo({ participant }: LiveVideoProps) {
     }
   }, [isFullscreen]);
 
-  /**
-   * Syncs local `isFullscreen` state with the browser's fullscreen state.
-   * Registered as a `fullscreenchange` listener on `document`.
-   */
-  const handleFullscreenChange = useCallback(() => {
-    setIsFullscreen(document.fullscreenElement !== null);
+  useEffect(() => {
+    const handler = () => {
+      setIsFullscreen(document.fullscreenElement !== null);
+    };
+    document.addEventListener("fullscreenchange", handler);
+    return () => {
+      document.removeEventListener("fullscreenchange", handler);
+    };
   }, []);
-
-  const documentRef = useRef(document);
-  useEventListener("fullscreenchange", handleFullscreenChange, documentRef);
 
   // Camera/microphone tracks published by any participant.
   const trackReferences = useTracks([
@@ -134,8 +133,11 @@ export function LiveVideo({ participant }: LiveVideoProps) {
   // `participantTracks` array itself, since `useTracks` returns a new
   // array on every call (e.g. on unrelated re-renders such as volume
   // changes), which would otherwise cause redundant attach/detach cycles.
-  const trackSids = participantTracks
-    .map((trackRef) => trackRef.publication.trackSid)
+  const trackKey = participantTracks
+    .map(
+      (trackRef) =>
+        `${trackRef.publication.trackSid}:${trackRef.publication.track?.mediaStreamTrack?.id ?? ""}`,
+    )
     .join(",");
 
   // Attach the participant's tracks to the video element whenever the
@@ -158,7 +160,7 @@ export function LiveVideo({ participant }: LiveVideoProps) {
       });
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trackSids]);
+  }, [trackKey]);
 
   return (
     <div ref={wrapperRef} className="relative flex h-full">

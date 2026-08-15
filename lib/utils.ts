@@ -71,21 +71,13 @@ export function cn(...inputs: ClassValue[]): string {
  *
  * @returns {string} A hex color string in the form `"#rrggbb"`.
  *
- * @remarks
- * The hashing loop currently reads `str.charCodeAt(1)` on every
- * iteration instead of `str.charCodeAt(i)`, so only the character at
- * index 1 influences the hash regardless of string length. This means
- * distinct strings sharing the same second character will resolve to
- * the same color. Documented here as a known limitation rather than
- * fixed, since behavior changes are out of scope for this pass.
- *
  * @example
  * stringToColor("Alice"); // → "#3f2a91" (example output)
  */
 export function stringToColor(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(1) + ((hash << 5) - hash);
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
   let color = "#";
   for (let i = 0; i < 3; i++) {
