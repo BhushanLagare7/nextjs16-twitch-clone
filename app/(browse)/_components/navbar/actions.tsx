@@ -38,8 +38,17 @@ import { Button } from "@/components/ui/button";
  * current authentication state of the user
  */
 export const Actions = async () => {
-  /** Fetches the currently authenticated user from Clerk, or null if unauthenticated */
-  const user = await currentUser();
+  /**
+   * Fetches the currently authenticated user from Clerk, or null if
+   * unauthenticated. Falls back to null on API errors (transient, rate-limit,
+   * or network issues during navigation) so the navbar still renders.
+   */
+  let user = null;
+  try {
+    user = await currentUser();
+  } catch {
+    // Clerk API error — treat as unauthenticated so the page doesn't crash.
+  }
 
   return (
     <div className="ml-4 flex items-center justify-end gap-x-2 lg:ml-0">

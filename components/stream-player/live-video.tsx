@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useTracks } from "@livekit/components-react";
 import { Participant, Track } from "livekit-client";
@@ -23,12 +23,26 @@ interface LiveVideoProps {
 }
 
 /**
+ * Applies a 0-100 volume level to a `<video>` element, muting it when the
+ * value is `0`.
+ *
+ * @param {HTMLVideoElement} element - The video element to update.
+ * @param {number} value - Volume level, from 0 (muted) to 100 (max).
+ */
+function applyVolumeToVideo(element: HTMLVideoElement, value: number) {
+  element.muted = value === 0;
+  element.volume = value * 0.01;
+}
+
+/**
  * Renders a live `<video>` element for a connected LiveKit participant,
  * along with hover-revealed volume and fullscreen controls.
  *
  * Attaches the participant's camera/microphone tracks to a local video
  * element, manages volume/mute state, and toggles fullscreen on the
- * wrapping container.
+ * wrapping container. Tracks are detached again when they change or when
+ * the component unmounts, to avoid leaking media attachments to stale
+ * DOM elements.
  *
  * @function LiveVideo
  *
@@ -48,27 +62,25 @@ export function LiveVideo({ participant }: LiveVideoProps) {
    *
    * @param {number} value - New volume level, from 0 (muted) to 100 (max).
    */
-  const onVolumeChange = (value: number) => {
+  const onVolumeChange = useCallback((value: number) => {
     setVolume(+value);
-    if (videoRef?.current) {
-      videoRef.current.muted = value === 0;
-      videoRef.current.volume = +value * 0.01;
+    if (videoRef.current) {
+      applyVolumeToVideo(videoRef.current, +value);
     }
-  };
+  }, []);
 
   /**
    * Toggles between muted (0) and a default 50% volume.
    */
-  const toggleMute = () => {
-    const isMuted = volume === 0;
-
-    setVolume(isMuted ? 50 : 0);
-
-    if (videoRef?.current) {
-      videoRef.current.muted = !isMuted;
-      videoRef.current.volume = isMuted ? 0.5 : 0;
-    }
-  };
+  const toggleMute = useCallback(() => {
+    setVolume((currentVolume) => {
+      const nextVolume = currentVolume === 0 ? 50 : 0;
+      if (videoRef.current) {
+        applyVolumeToVideo(videoRef.current, nextVolume);
+      }
+      return nextVolume;
+    });
+  }, []);
 
   // Start muted by default to comply with browser autoplay policies.
   useEffect(() => {
@@ -81,40 +93,72 @@ export function LiveVideo({ participant }: LiveVideoProps) {
   /**
    * Enters or exits fullscreen mode on the video wrapper element.
    */
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (isFullscreen) {
       document.exitFullscreen();
-    } else if (wrapperRef?.current) {
+    } else if (wrapperRef.current) {
       wrapperRef.current.requestFullscreen();
     }
-  };
+  }, [isFullscreen]);
 
   /**
    * Syncs local `isFullscreen` state with the browser's fullscreen state.
    * Registered as a `fullscreenchange` listener on `document`.
    */
-  const handleFullscreenChange = () => {
-    const isCurrentlyFullscreen = document.fullscreenElement !== null;
-    setIsFullscreen(isCurrentlyFullscreen);
-  };
+  const handleFullscreenChange = useCallback(() => {
+    setIsFullscreen(document.fullscreenElement !== null);
+  }, []);
 
   const documentRef = useRef(document);
   useEventListener("fullscreenchange", handleFullscreenChange, documentRef);
 
-  // Camera/microphone tracks belonging to this specific participant.
-  const tracks = useTracks([
+  // Camera/microphone tracks published by any participant.
+  const trackReferences = useTracks([
     Track.Source.Camera,
     Track.Source.Microphone,
-  ]).filter((track) => track.participant.identity === participant.identity);
+  ]);
 
-  // Attach the participant's tracks to the video element whenever they change.
+  // Tracks belonging to this specific participant. Memoized so the
+  // reference is stable across renders that don't affect the underlying
+  // track list, reducing unnecessary work downstream.
+  const participantTracks = useMemo(
+    () =>
+      trackReferences.filter(
+        (trackRef) => trackRef.participant.identity === participant.identity,
+      ),
+    [trackReferences, participant.identity],
+  );
+
+  // Stable, primitive key representing the current set of track
+  // publications. Used as the effect dependency below instead of the
+  // `participantTracks` array itself, since `useTracks` returns a new
+  // array on every call (e.g. on unrelated re-renders such as volume
+  // changes), which would otherwise cause redundant attach/detach cycles.
+  const trackSids = participantTracks
+    .map((trackRef) => trackRef.publication.trackSid)
+    .join(",");
+
+  // Attach the participant's tracks to the video element whenever the
+  // actual set of tracks changes, and detach them again on cleanup
+  // (i.e. before re-attaching a new set, or on unmount). This prevents
+  // tracks from remaining attached to a stale/removed `<video>` element,
+  // which would otherwise continue decoding and rendering media in the
+  // background, leaking browser and memory resources.
   useEffect(() => {
-    tracks.forEach((track) => {
-      if (videoRef.current) {
-        track.publication.track?.attach(videoRef.current);
-      }
+    const element = videoRef.current;
+    if (!element) return;
+
+    participantTracks.forEach((trackRef) => {
+      trackRef.publication.track?.attach(element);
     });
-  }, [tracks]);
+
+    return () => {
+      participantTracks.forEach((trackRef) => {
+        trackRef.publication.track?.detach(element);
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackSids]);
 
   return (
     <div ref={wrapperRef} className="relative flex h-full">
