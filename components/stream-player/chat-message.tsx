@@ -1,7 +1,8 @@
 /**
  * @file components/stream-player/chat-message.tsx
  * @description Renders a single chat message row, including timestamp,
- * author name (color-coded per user), and message text.
+ * author name (color-coded per user), and message text. Also exports the
+ * full-panel loading skeleton for the chat sidebar.
  *
  * @module ChatMessage
  */
@@ -12,6 +13,10 @@ import { ReceivedChatMessage } from "@livekit/components-react";
 import { format } from "date-fns";
 
 import { stringToColor } from "@/lib/utils";
+
+import { ChatFormSkeleton } from "./chat-form";
+import { ChatHeaderSkeleton } from "./chat-header";
+import { ChatListSkeleton } from "./chat-list";
 
 /**
  * Props for the {@link ChatMessage} component.
@@ -44,9 +49,27 @@ export function ChatMessage({ data }: ChatMessageProps) {
           <span className="truncate" style={{ color: color }}>
             {data.from?.name}
           </span>
+          :
         </p>
         <p className="text-sm break-all">{data.message}</p>
       </div>
     </div>
   );
 }
+
+/**
+ * Full-panel loading skeleton for the chat sidebar, composed of the
+ * header, list, and form skeletons.
+ *
+ * @function ChatSkeleton
+ * @returns {JSX.Element} The composed chat sidebar skeleton.
+ */
+export const ChatSkeleton = () => {
+  return (
+    <div className="flex h-[calc(100vh-80px)] flex-col border-2 border-b border-l pt-0">
+      <ChatHeaderSkeleton />
+      <ChatListSkeleton />
+      <ChatFormSkeleton />
+    </div>
+  );
+};

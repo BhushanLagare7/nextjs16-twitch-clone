@@ -4,6 +4,7 @@
  *
  * Manages viewer token acquisition and conditionally renders the stream
  * view once a valid LiveKit JWT, identity, and display name are available.
+ * Also exports {@link StreamPlayerSkeleton}, the corresponding loading state.
  *
  * @module StreamPlayer
  */
@@ -20,8 +21,9 @@ import { cn } from "@/lib/utils";
 import { useChatSidebar } from "@/store/use-chat-sidebar";
 
 import { Chat } from "./chat";
+import { ChatSkeleton } from "./chat-message";
 import { ChatToggle } from "./chat-toggle";
-import { Video } from "./video";
+import { Video, VideoSkeleton } from "./video";
 
 /**
  * Props for the {@link StreamPlayer} component.
@@ -95,7 +97,7 @@ export function StreamPlayer({ user, stream, isFollowing }: StreamPlayerProps) {
 
   // Token, identity, or name missing — either still loading or an error occurred.
   if (!token || !name || !identity) {
-    return <div>Cannot watch the stream</div>;
+    return <StreamPlayerSkeleton />;
   }
 
   return (
@@ -115,10 +117,12 @@ export function StreamPlayer({ user, stream, isFollowing }: StreamPlayerProps) {
         onDisconnected={onDisconnected}
         onError={onError}
       >
-        <div className={cn(
-          "hidden-scrollbar col-span-1 space-y-4 pb-10 lg:col-span-2 lg:overflow-y-auto xl:col-span-2 2xl:col-span-5",
-          collapsed && "2xl:col-span-2",
-        )}>
+        <div
+          className={cn(
+            "hidden-scrollbar col-span-1 space-y-4 pb-10 lg:col-span-2 lg:overflow-y-auto xl:col-span-2 2xl:col-span-5",
+            collapsed && "2xl:col-span-2",
+          )}
+        >
           <Video hostIdentity={user.id} hostName={user.username} />
         </div>
         <div className={cn("col-span-1", collapsed && "hidden")}>
@@ -134,5 +138,27 @@ export function StreamPlayer({ user, stream, isFollowing }: StreamPlayerProps) {
         </div>
       </LiveKitRoom>
     </>
+  );
+}
+
+/**
+ * Loading state for {@link StreamPlayer}, rendered while the viewer token
+ * is being fetched. Mirrors the real layout's grid structure with skeleton
+ * placeholders for the video and chat panel.
+ *
+ * @function StreamPlayerSkeleton
+ * @returns {JSX.Element} The stream player skeleton UI.
+ */
+export function StreamPlayerSkeleton() {
+  return (
+    <div className="grid h-full grid-cols-1 lg:grid-cols-3 lg:gap-y-0 xl:grid-cols-3 2xl:grid-cols-6">
+      <div className="hidden-scrollbar col-span-1 space-y-4 pb-10 lg:col-span-2 lg:overflow-y-auto xl:col-span-2 2xl:col-span-5">
+        <VideoSkeleton />
+        {/* TODO: Header Skeleton */}
+      </div>
+      <div className="col-span-1 bg-background">
+        <ChatSkeleton />
+      </div>
+    </div>
   );
 }

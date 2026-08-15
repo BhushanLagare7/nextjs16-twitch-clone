@@ -59,7 +59,13 @@ const eslintConfig = defineConfig([
    *
    * @see {@link https://eslint.org/docs/latest/use/configure/ignore | ESLint ignore patterns}
    */
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    "generated/**",
+  ]),
 
   // ─── Custom: JSX Prop Ordering ─────────────────────────────────────────────
 

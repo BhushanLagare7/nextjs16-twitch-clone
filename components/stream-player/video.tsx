@@ -1,3 +1,12 @@
+/**
+ * @file components/stream-player/video.tsx
+ * @description Resolves and renders the correct video state (offline,
+ * loading, or live) for a stream host, plus the corresponding loading
+ * skeleton.
+ *
+ * @module Video
+ */
+
 "use client";
 
 import {
@@ -6,6 +15,8 @@ import {
   useTracks,
 } from "@livekit/components-react";
 import { ConnectionState, Track } from "livekit-client";
+
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { LiveVideo } from "./live-video";
 import { LoadingVideo } from "./loading-video";
@@ -63,4 +74,20 @@ export function Video({ hostName, hostIdentity }: VideoProps) {
   }
 
   return <div className="group relative aspect-video border-b">{content}</div>;
+}
+
+/**
+ * Placeholder shown in place of {@link Video} while the surrounding
+ * `StreamPlayer` is still resolving a viewer token/connection.
+ *
+ * @function VideoSkeleton
+ * @returns {JSX.Element} A full-bleed skeleton matching the video's
+ *   aspect ratio.
+ */
+export function VideoSkeleton() {
+  return (
+    <div className="aspect-video border-x border-background">
+      <Skeleton className="h-full w-full rounded-none" />
+    </div>
+  );
 }
