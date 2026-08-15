@@ -1,7 +1,8 @@
 /**
  * @file components/stream-player/chat-list.tsx
  * @description Scrollable list of received chat messages, rendered newest
- * message closest to the input via a column-reverse layout.
+ * message closest to the input via a column-reverse layout, plus its
+ * loading skeleton.
  *
  * @module ChatList
  */
@@ -9,6 +10,8 @@
 "use client";
 
 import { ReceivedChatMessage } from "@livekit/components-react";
+
+import { Skeleton } from "../ui/skeleton";
 
 import { ChatMessage } from "./chat-message";
 
@@ -51,6 +54,21 @@ export function ChatList({ messages, isHidden }: ChatListProps) {
       {messages.map((message) => (
         <ChatMessage key={message.timestamp} data={message} />
       ))}
+    </div>
+  );
+}
+
+/**
+ * Placeholder shown in place of {@link ChatList} while chat data/state is
+ * still loading.
+ *
+ * @function ChatListSkeleton
+ * @returns {JSX.Element} A centered skeleton bar.
+ */
+export function ChatListSkeleton() {
+  return (
+    <div className="flex h-full items-center justify-center">
+      <Skeleton className="h-6 w-1/2" />
     </div>
   );
 }

@@ -23,6 +23,7 @@ import { useMediaQuery } from "usehooks-ts";
 
 import { ChatVariant, useChatSidebar } from "@/store/use-chat-sidebar";
 
+import { ChatCommunity } from "./chat-community";
 import { ChatForm } from "./chat-form";
 import { ChatHeader } from "./chat-header";
 import { ChatList } from "./chat-list";
@@ -134,9 +135,11 @@ export function Chat({
         </>
       )}
       {variant === ChatVariant.COMMUNITY && (
-        <>
-          <p>Community</p>
-        </>
+        <ChatCommunity
+          hostName={hostName}
+          isHidden={isHidden}
+          viewerName={viewerName}
+        />
       )}
     </div>
   );

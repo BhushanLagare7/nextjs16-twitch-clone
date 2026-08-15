@@ -4,6 +4,7 @@
  *
  * Manages viewer token acquisition and conditionally renders the stream
  * view once a valid LiveKit JWT, identity, and display name are available.
+ * Also exports {@link StreamPlayerSkeleton}, the corresponding loading state.
  *
  * @module StreamPlayer
  */
@@ -20,8 +21,9 @@ import { cn } from "@/lib/utils";
 import { useChatSidebar } from "@/store/use-chat-sidebar";
 
 import { Chat } from "./chat";
+import { ChatSkeleton } from "./chat-message";
 import { ChatToggle } from "./chat-toggle";
-import { Video } from "./video";
+import { Video, VideoSkeleton } from "./video";
 
 /**
  * Props for the {@link StreamPlayer} component.
@@ -49,8 +51,9 @@ interface StreamPlayerProps {
  * Renders a LiveKit-powered stream player for a given host's channel.
  *
  * Internally calls the {@link useViewerToken} hook to asynchronously fetch
- * and decode a scoped JWT. While the token is being retrieved, or if token
- * generation fails, a fallback message is displayed instead of the player.
+ * and decode a scoped JWT. While the token is being retrieved, a
+ * {@link StreamPlayerSkeleton} is displayed. If the request fails
+ * permanently, an error message with a retry button is shown instead.
  *
  * Requires `NEXT_PUBLIC_LIVEKIT_WS_URL` to be set in the environment for
  * the `LiveKitRoom` to connect to the correct LiveKit server.
@@ -59,8 +62,9 @@ interface StreamPlayerProps {
  *
  * @param {StreamPlayerProps} props - Component props.
  *
- * @returns {JSX.Element} The stream player UI, or a fallback error message
- *   if a valid token, identity, or display name could not be obtained.
+ * @returns {JSX.Element} The stream player UI, a
+ *   {@link StreamPlayerSkeleton} while loading, or an error/retry UI if
+ *   a valid token, identity, or display name could not be obtained.
  *
  * @example
  * <StreamPlayer
@@ -70,7 +74,7 @@ interface StreamPlayerProps {
  * />
  */
 export function StreamPlayer({ user, stream, isFollowing }: StreamPlayerProps) {
-  const { token, name, identity } = useViewerToken(user.id);
+  const { token, name, identity, isLoading, error } = useViewerToken(user.id);
   const { collapsed } = useChatSidebar((state) => state);
 
   /**
@@ -93,9 +97,24 @@ export function StreamPlayer({ user, stream, isFollowing }: StreamPlayerProps) {
     console.debug("[LiveKitRoom] Disconnected");
   }, []);
 
-  // Token, identity, or name missing — either still loading or an error occurred.
-  if (!token || !name || !identity) {
-    return <div>Cannot watch the stream</div>;
+  if (isLoading) {
+    return <StreamPlayerSkeleton />;
+  }
+
+  if (error || !token || !name || !identity) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-y-4">
+        <p className="text-sm text-muted-foreground">
+          {error ?? "Unable to connect to stream"}
+        </p>
+        <button
+          className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground transition hover:bg-primary/90"
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -115,10 +134,12 @@ export function StreamPlayer({ user, stream, isFollowing }: StreamPlayerProps) {
         onDisconnected={onDisconnected}
         onError={onError}
       >
-        <div className={cn(
-          "hidden-scrollbar col-span-1 space-y-4 pb-10 lg:col-span-2 lg:overflow-y-auto xl:col-span-2 2xl:col-span-5",
-          collapsed && "2xl:col-span-2",
-        )}>
+        <div
+          className={cn(
+            "hidden-scrollbar col-span-1 space-y-4 pb-10 lg:col-span-2 lg:overflow-y-auto xl:col-span-2 2xl:col-span-5",
+            collapsed && "2xl:col-span-2",
+          )}
+        >
           <Video hostIdentity={user.id} hostName={user.username} />
         </div>
         <div className={cn("col-span-1", collapsed && "hidden")}>
@@ -134,5 +155,27 @@ export function StreamPlayer({ user, stream, isFollowing }: StreamPlayerProps) {
         </div>
       </LiveKitRoom>
     </>
+  );
+}
+
+/**
+ * Loading state for {@link StreamPlayer}, rendered while the viewer token
+ * is being fetched. Mirrors the real layout's grid structure with skeleton
+ * placeholders for the video and chat panel.
+ *
+ * @function StreamPlayerSkeleton
+ * @returns {JSX.Element} The stream player skeleton UI.
+ */
+export function StreamPlayerSkeleton() {
+  return (
+    <div className="grid h-full grid-cols-1 lg:grid-cols-3 lg:gap-y-0 xl:grid-cols-3 2xl:grid-cols-6">
+      <div className="hidden-scrollbar col-span-1 space-y-4 pb-10 lg:col-span-2 lg:overflow-y-auto xl:col-span-2 2xl:col-span-5">
+        <VideoSkeleton />
+        {/* TODO: Header Skeleton */}
+      </div>
+      <div className="col-span-1 bg-background">
+        <ChatSkeleton />
+      </div>
+    </div>
   );
 }

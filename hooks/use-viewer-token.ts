@@ -4,7 +4,7 @@
  *
  * Abstracts the async token lifecycle — creation, JWT decoding, and local
  * state management — so that consumer components receive the resolved
- * `token`, `name`, and `identity` values reactively.
+ * `token`, `name`, `identity`, `isLoading`, and `error` values reactively.
  *
  * @module useViewerToken
  */
@@ -27,8 +27,8 @@ import { createViewerToken } from "@/actions/token";
  *    (`sub` claim, used as the LiveKit participant identity).
  * 3. Stores each value in local state; components re-render automatically
  *    once all values are resolved.
- * 4. On failure, displays a toast notification and resets state to empty
- *    strings, which consumers should treat as a loading/error indicator.
+ * 4. On failure, displays a toast notification, sets `error` to a
+ *    descriptive message, and clears `isLoading`.
  * 5. Stale requests (from a previous `hostIdentity`) are ignored via a
  *    cancellation flag set in the effect cleanup.
  *
@@ -38,25 +38,22 @@ import { createViewerToken } from "@/actions/token";
  *   to request a room-scoped viewer token. The effect re-runs whenever
  *   this value changes.
  *
- * @returns {{ token: string; name: string; identity: string }} An object
+ * @returns {{ token: string; name: string; identity: string; isLoading: boolean; error: string }} An object
  *   containing:
  *   - `token` — The raw signed LiveKit JWT string (empty until resolved).
  *   - `name` — The viewer's display name decoded from the JWT (empty until
  *     resolved).
  *   - `identity` — The viewer's LiveKit participant identity (`sub` claim),
  *     empty until resolved.
- *
- * @example
- * const { token, name, identity } = useViewerToken("host-user-id-123");
- *
- * if (!token || !name || !identity) {
- *   return <LoadingSpinner />;
- * }
+ *   - `isLoading` — `true` while the token request is in flight.
+ *   - `error` — Non-empty error message when the request fails permanently.
  */
 export function useViewerToken(hostIdentity: string) {
   const [token, setToken] = useState("");
   const [name, setName] = useState("");
   const [identity, setIdentity] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     // Clear stale state immediately when the host changes.
@@ -64,6 +61,8 @@ export function useViewerToken(hostIdentity: string) {
     setToken("");
     setName("");
     setIdentity("");
+    setIsLoading(true);
+    setError("");
 
     let cancelled = false;
 
@@ -92,8 +91,12 @@ export function useViewerToken(hostIdentity: string) {
         if (participantName) {
           setName(participantName);
         }
+
+        setIsLoading(false);
       } catch {
         if (cancelled) return;
+        setIsLoading(false);
+        setError("Failed to connect to stream");
         toast.error("Something went wrong");
       }
     };
@@ -109,5 +112,7 @@ export function useViewerToken(hostIdentity: string) {
     token,
     name,
     identity,
+    isLoading,
+    error,
   };
 }
