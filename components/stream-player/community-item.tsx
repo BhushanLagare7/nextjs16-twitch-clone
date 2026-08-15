@@ -68,10 +68,13 @@ export function CommunityItem({
   const handleBlock = () => {
     if (!participantName || isSelf || !isHost) return;
 
-    startTransition(() => {
-      onBlock(participantIdentity)
-        .then(() => toast.success(`Blocked ${participantName}`))
-        .catch(() => toast.error("Something went wrong"));
+    startTransition(async () => {
+      try {
+        await onBlock(participantIdentity);
+        toast.success(`Blocked ${participantName}`);
+      } catch {
+        toast.error("Something went wrong");
+      }
     });
   };
 
@@ -86,7 +89,7 @@ export function CommunityItem({
       {isHost && !isSelf && (
         <Hint label="Block">
           <Button
-            className="h-auto w-auto p-1 opacity-0 transition group-hover:opacity-100"
+            className="h-auto w-auto p-1 opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100"
             disabled={isPending}
             variant="ghost"
             onClick={handleBlock}

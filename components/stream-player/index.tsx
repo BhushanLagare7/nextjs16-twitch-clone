@@ -51,8 +51,9 @@ interface StreamPlayerProps {
  * Renders a LiveKit-powered stream player for a given host's channel.
  *
  * Internally calls the {@link useViewerToken} hook to asynchronously fetch
- * and decode a scoped JWT. While the token is being retrieved, or if token
- * generation fails, a fallback message is displayed instead of the player.
+ * and decode a scoped JWT. While the token is being retrieved, a
+ * {@link StreamPlayerSkeleton} is displayed. If the request fails
+ * permanently, an error message with a retry button is shown instead.
  *
  * Requires `NEXT_PUBLIC_LIVEKIT_WS_URL` to be set in the environment for
  * the `LiveKitRoom` to connect to the correct LiveKit server.
@@ -61,8 +62,9 @@ interface StreamPlayerProps {
  *
  * @param {StreamPlayerProps} props - Component props.
  *
- * @returns {JSX.Element} The stream player UI, or a fallback error message
- *   if a valid token, identity, or display name could not be obtained.
+ * @returns {JSX.Element} The stream player UI, a
+ *   {@link StreamPlayerSkeleton} while loading, or an error/retry UI if
+ *   a valid token, identity, or display name could not be obtained.
  *
  * @example
  * <StreamPlayer
@@ -72,7 +74,7 @@ interface StreamPlayerProps {
  * />
  */
 export function StreamPlayer({ user, stream, isFollowing }: StreamPlayerProps) {
-  const { token, name, identity } = useViewerToken(user.id);
+  const { token, name, identity, isLoading, error } = useViewerToken(user.id);
   const { collapsed } = useChatSidebar((state) => state);
 
   /**
@@ -95,9 +97,24 @@ export function StreamPlayer({ user, stream, isFollowing }: StreamPlayerProps) {
     console.debug("[LiveKitRoom] Disconnected");
   }, []);
 
-  // Token, identity, or name missing — either still loading or an error occurred.
-  if (!token || !name || !identity) {
+  if (isLoading) {
     return <StreamPlayerSkeleton />;
+  }
+
+  if (error || !token || !name || !identity) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-y-4">
+        <p className="text-sm text-muted-foreground">
+          {error ?? "Unable to connect to stream"}
+        </p>
+        <button
+          className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground transition hover:bg-primary/90"
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (

@@ -65,10 +65,10 @@ export function ChatCommunity({
    *
    * Deduplication is done in a single linear pass: for each participant we
    * track the identities seen so far in a `Set` and skip a participant if
-   * an entry named `host-<identity>` was already accepted earlier in the
-   * list (i.e. the same person already appears under their "host-as-viewer"
-   * identity). This preserves the original order-dependent behavior while
-   * avoiding the `O(n^2)` cost of scanning the accumulator on every step.
+   * either its `host-<identity>` counterpart or its unprefixed counterpart
+   * (when the identity itself starts with `host-`) was already accepted.
+   * This ensures duplicates are caught regardless of ordering while
+   * avoiding the `O(n²)` cost of scanning the accumulator on every step.
    */
   const filteredParticipants = useMemo(() => {
     const seenIdentities = new Set<string>();
@@ -76,7 +76,15 @@ export function ChatCommunity({
 
     for (const participant of participants) {
       const hostAsViewer = `host-${participant.identity}`;
-      if (!seenIdentities.has(hostAsViewer)) {
+      const isHostPrefixed = participant.identity.startsWith("host-");
+      const unprefixed = isHostPrefixed
+        ? participant.identity.slice("host-".length)
+        : undefined;
+
+      if (
+        !seenIdentities.has(hostAsViewer) &&
+        !(unprefixed && seenIdentities.has(unprefixed))
+      ) {
         deduped.push(participant);
         seenIdentities.add(participant.identity);
       }
@@ -98,13 +106,13 @@ export function ChatCommunity({
   }
 
   return (
-    <div className="p-4">
+    <div className="flex flex-1 flex-col gap-y-2 min-h-0 p-4">
       <Input
         className="border-white/10"
         placeholder="Search community"
         onChange={(e) => setValue(e.target.value)}
       />
-      <ScrollArea className="mt-4 gap-y-2">
+      <ScrollArea className="flex-1 min-h-0">
         <p className="hidden p-2 text-center text-sm text-muted-foreground last:block">
           No results
         </p>
