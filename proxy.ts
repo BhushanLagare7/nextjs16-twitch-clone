@@ -18,7 +18,7 @@ import { clerkMiddleware } from "@clerk/nextjs/server";
  * Clerk middleware instance that handles authentication for all matched routes.
  *
  * Uses direct `pathname` checks instead of `createRouteMatcher` for optimal performance.
- * - Public routes (/, /api/webhooks, /sign-in, /sign-up) bypass authentication checks.
+ * - Public routes (/, /api/webhooks, /api/uploadthing, /sign-in, /sign-up) bypass authentication checks.
  * - All other protected routes check authentication state and redirect signed-out users to sign-in.
  *
  * @default
@@ -30,6 +30,7 @@ export default clerkMiddleware(async (auth, req) => {
   const isPublicRoute =
     pathname === "/" ||
     pathname.startsWith("/api/webhooks") ||
+    pathname.startsWith("/api/uploadthing") ||
     pathname.startsWith("/sign-in") ||
     pathname.startsWith("/sign-up");
 

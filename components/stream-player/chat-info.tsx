@@ -76,7 +76,7 @@ export function ChatInfo({ isDelayed, isFollowersOnly }: ChatInfoProps) {
   }
 
   return (
-    <div className="flex w-full items-center gap-x-2 rounded-t-md border border-white/10 bg-white/5 p-2 text-muted-foreground">
+    <div className="flex w-full items-center gap-x-2 rounded-t-md border border-border bg-muted/40 p-2 text-muted-foreground">
       <Hint label={hint}>
         <InfoIcon className="size-4" />
       </Hint>

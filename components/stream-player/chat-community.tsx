@@ -108,7 +108,6 @@ export function ChatCommunity({
   return (
     <div className="flex flex-1 flex-col gap-y-2 min-h-0 p-4">
       <Input
-        className="border-white/10"
         placeholder="Search community"
         onChange={(e) => setValue(e.target.value)}
       />

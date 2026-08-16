@@ -81,7 +81,7 @@ export function CommunityItem({
   return (
     <div
       className={cn(
-        "group flex w-full items-center justify-between rounded-md p-2 text-sm hover:bg-white/5",
+        "group flex w-full items-center justify-between rounded-md p-2 text-sm hover:bg-muted/50",
         isPending && "pointer-events-none opacity-50",
       )}
     >
