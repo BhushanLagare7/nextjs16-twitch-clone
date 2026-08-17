@@ -64,14 +64,15 @@ export const InfoModal = ({
    * Closes the dialog and shows a success or error toast on completion.
    */
   const onRemove = () => {
-    startTransition(() => {
-      updateStream({ thumbnailUrl: null })
-        .then(() => {
-          toast.success("Thumbnail removed");
-          setThumbnailUrl("");
-          closeRef?.current?.click();
-        })
-        .catch(() => toast.error("Something went wrong"));
+    startTransition(async () => {
+      try {
+        await updateStream({ thumbnailUrl: null });
+        toast.success("Thumbnail removed");
+        setThumbnailUrl("");
+        closeRef?.current?.click();
+      } catch {
+        toast.error("Something went wrong");
+      }
     });
   };
 
@@ -85,13 +86,14 @@ export const InfoModal = ({
   const onSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    startTransition(() => {
-      updateStream({ name: name })
-        .then(() => {
-          toast.success("Stream updated");
-          closeRef?.current?.click();
-        })
-        .catch(() => toast.error("Something went wrong"));
+    startTransition(async () => {
+      try {
+        await updateStream({ name: name });
+        toast.success("Stream updated");
+        closeRef?.current?.click();
+      } catch {
+        toast.error("Something went wrong");
+      }
     });
   };
 
@@ -105,7 +107,14 @@ export const InfoModal = ({
   };
 
   return (
-    <Dialog>
+    <Dialog
+      onOpenChange={(open) => {
+        if (open) {
+          setName(initialName);
+          setThumbnailUrl(initialThumbnailUrl);
+        }
+      }}
+    >
       {/* Trigger button that opens the edit dialog. */}
       <DialogTrigger asChild>
         <Button className="ml-auto" size="sm" variant="link">
@@ -149,6 +158,7 @@ export const InfoModal = ({
                   alt="Thumbnail"
                   className="object-cover"
                   fill
+                  sizes="(max-width: 768px) 100vw, 448px"
                   src={thumbnailUrl}
                 />
               </div>
@@ -166,9 +176,15 @@ export const InfoModal = ({
                   }}
                   endpoint="thumbnailUploader"
                   onClientUploadComplete={(res) => {
-                    setThumbnailUrl(res?.[0]?.url);
-                    router.refresh();
-                    closeRef?.current?.click();
+                    const url = res?.[0]?.url;
+                    if (url) {
+                      setThumbnailUrl(url);
+                      router.refresh();
+                      closeRef?.current?.click();
+                    }
+                  }}
+                  onUploadError={(error: Error) => {
+                    toast.error(error.message ?? "Something went wrong");
                   }}
                 />
               </div>

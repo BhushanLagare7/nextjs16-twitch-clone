@@ -29,10 +29,14 @@ export default clerkMiddleware(async (auth, req) => {
   // Define public routes using standard string matching
   const isPublicRoute =
     pathname === "/" ||
-    pathname.startsWith("/api/webhooks") ||
-    pathname.startsWith("/api/uploadthing") ||
-    pathname.startsWith("/sign-in") ||
-    pathname.startsWith("/sign-up");
+    pathname === "/api/webhooks" ||
+    pathname.startsWith("/api/webhooks/") ||
+    pathname === "/api/uploadthing" ||
+    pathname.startsWith("/api/uploadthing/") ||
+    pathname === "/sign-in" ||
+    pathname.startsWith("/sign-in/") ||
+    pathname === "/sign-up" ||
+    pathname.startsWith("/sign-up/");
 
   if (!isPublicRoute) {
     const { userId, redirectToSignIn } = await auth();
