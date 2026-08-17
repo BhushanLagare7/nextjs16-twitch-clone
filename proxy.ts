@@ -15,19 +15,17 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 
 /**
- * Clerk middleware instance that handles authentication for all matched routes.
+ * Checks whether the incoming pathname matches a public route.
  *
- * Uses direct `pathname` checks instead of `createRouteMatcher` for optimal performance.
- * - Public routes (/, /api/webhooks, /api/uploadthing, /sign-in, /sign-up) bypass authentication checks.
- * - All other protected routes check authentication state and redirect signed-out users to sign-in.
- *
- * @default
+ * Public routes:
+ * - Root path: `/`
+ * - Webhooks: `/api/webhooks` and nested paths
+ * - UploadThing: `/api/uploadthing` and nested paths
+ * - Authentication: `/sign-in`, `/sign-up` and nested paths
+ * - Dynamic user stream pages: `/:username` (single-segment root path)
  */
-export default clerkMiddleware(async (auth, req) => {
-  const pathname = req.nextUrl.pathname;
-
-  // Define public routes using standard string matching
-  const isPublicRoute =
+const isPublicRoute = (pathname: string): boolean => {
+  if (
     pathname === "/" ||
     pathname === "/api/webhooks" ||
     pathname.startsWith("/api/webhooks/") ||
@@ -36,9 +34,27 @@ export default clerkMiddleware(async (auth, req) => {
     pathname === "/sign-in" ||
     pathname.startsWith("/sign-in/") ||
     pathname === "/sign-up" ||
-    pathname.startsWith("/sign-up/");
+    pathname.startsWith("/sign-up/")
+  ) {
+    return true;
+  }
 
-  if (!isPublicRoute) {
+  // Matches single root-level dynamic route "/:username" (e.g. "/ninja", but not "/u/ninja" or nested paths)
+  return /^\/[^/]+$/.test(pathname);
+};
+
+/**
+ * Clerk middleware instance that handles authentication for all matched routes.
+ *
+ * - Public routes (/, /api/webhooks, /api/uploadthing, /:username, /sign-in, /sign-up) bypass authentication checks.
+ * - All other protected routes check authentication state and redirect signed-out users to sign-in.
+ *
+ * @default
+ */
+export default clerkMiddleware(async (auth, req) => {
+  const pathname = req.nextUrl.pathname;
+
+  if (!isPublicRoute(pathname)) {
     const { userId, redirectToSignIn } = await auth();
 
     if (!userId) {
