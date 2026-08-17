@@ -23,6 +23,8 @@ import { useChatSidebar } from "@/store/use-chat-sidebar";
 import { Chat } from "./chat";
 import { ChatSkeleton } from "./chat-message";
 import { ChatToggle } from "./chat-toggle";
+import { Header, HeaderSkeleton } from "./header";
+import { InfoCard } from "./info-card";
 import { Video, VideoSkeleton } from "./video";
 
 /**
@@ -141,6 +143,20 @@ export function StreamPlayer({ user, stream, isFollowing }: StreamPlayerProps) {
           )}
         >
           <Video hostIdentity={user.id} hostName={user.username} />
+          <Header
+            hostIdentity={user.id}
+            hostName={user.username}
+            imageUrl={user.imageUrl}
+            isFollowing={isFollowing}
+            name={stream.name}
+            viewerIdentity={identity}
+          />
+          <InfoCard
+            hostIdentity={user.id}
+            name={stream.name}
+            thumbnailUrl={stream.thumbnailUrl}
+            viewerIdentity={identity}
+          />
         </div>
         <div className={cn("col-span-1", collapsed && "hidden")}>
           <Chat
@@ -171,7 +187,7 @@ export function StreamPlayerSkeleton() {
     <div className="grid h-full grid-cols-1 lg:grid-cols-3 lg:gap-y-0 xl:grid-cols-3 2xl:grid-cols-6">
       <div className="hidden-scrollbar col-span-1 space-y-4 pb-10 lg:col-span-2 lg:overflow-y-auto xl:col-span-2 2xl:col-span-5">
         <VideoSkeleton />
-        {/* TODO: Header Skeleton */}
+        <HeaderSkeleton />
       </div>
       <div className="col-span-1 bg-background">
         <ChatSkeleton />

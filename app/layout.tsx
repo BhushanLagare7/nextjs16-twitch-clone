@@ -22,6 +22,10 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { extractRouterConfig } from "uploadthing/server";
+
+import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { ClerkThemeProvider } from "@/components/clerk-theme-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -122,6 +126,15 @@ export default function RootLayout({
        * - `flex-col`    : Stacks children vertically (header, main, footer pattern)
        */}
       <body className="flex min-h-full flex-col">
+        {/*
+         * NextSSRPlugin: UploadThing SSR optimization.
+         *
+         * Extracts the file router configuration on the server side and
+         * injects it into the page, preventing a client-side loading state
+         * flash when UploadThing components (UploadButton, UploadDropzone)
+         * need to fetch permissions info.
+         */}
+        <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
         {/*
          * ThemeProvider (next-themes): Manages light/dark mode.
          *

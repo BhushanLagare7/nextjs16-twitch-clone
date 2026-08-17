@@ -40,7 +40,7 @@ export function ChatToggle() {
   return (
     <Hint asChild label={label} side="left">
       <Button
-        className="h-auto bg-transparent p-2 hover:bg-white/10 hover:text-primary"
+        className="h-auto bg-transparent p-2 hover:bg-muted/50 hover:text-primary"
         variant="ghost"
         onClick={onToggle}
       >
