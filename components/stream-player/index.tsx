@@ -20,6 +20,10 @@ import { useCallback } from "react";
 import { LiveKitRoom } from "@livekit/components-react";
 
 import { useViewerToken } from "@/hooks/use-viewer-token";
+import type {
+  StreamPlayerStream,
+  StreamPlayerUser,
+} from "@/lib/user-service";
 import { cn } from "@/lib/utils";
 import { useChatSidebar } from "@/store/use-chat-sidebar";
 
@@ -32,74 +36,23 @@ import { InfoCard } from "./info-card";
 import { Video, VideoSkeleton } from "./video";
 
 /**
- * A minimal stream record containing only the fields consumed by
- * {@link StreamPlayer}, decoupled from the full Prisma `Stream` model.
- *
- * @typedef {object} CustomStream
- * @property {string}      id                   - Unique stream identifier.
- * @property {boolean}     isChatEnabled        - Whether chat is enabled for the stream.
- * @property {boolean}     isChatDelayed        - Whether chat messages are delayed.
- * @property {boolean}     isChatFollowersOnly  - Whether chat is restricted to followers.
- * @property {boolean}     isLive               - Whether the stream is currently live.
- * @property {string|null} thumbnailUrl         - URL of the stream's thumbnail image,
- *                                                or `null` if not set.
- * @property {string}      name                 - Display name / title of the stream.
- */
-type CustomStream = {
-  id: string;
-  isChatEnabled: boolean;
-  isChatDelayed: boolean;
-  isChatFollowersOnly: boolean;
-  isLive: boolean;
-  thumbnailUrl: string | null;
-  name: string;
-};
-
-/**
- * A minimal user record containing only the fields consumed by
- * {@link StreamPlayer}, decoupled from the full Prisma `User` model.
- *
- * @typedef {object} CustomUser
- * @property {string}            id            - Unique user identifier. Used to
- *                                               request a scoped viewer token and as
- *                                               the LiveKit host identity.
- * @property {string}            username      - The streamer's display name.
- * @property {string|null}       bio           - The streamer's biography text,
- *                                               or `null` if not set.
- * @property {CustomStream|null} stream        - The streamer's active stream record,
- *                                               or `null` if no stream exists.
- * @property {string}            imageUrl      - URL of the streamer's profile image.
- * @property {{ followedBy: number }} _count   - Aggregated relation counts.
- *   - `followedBy` — total number of users following the streamer, passed to
- *     {@link AboutCard} for the follower count display.
- */
-type CustomUser = {
-  id: string;
-  username: string;
-  bio: string | null;
-  stream: CustomStream | null;
-  imageUrl: string;
-  _count: { followedBy: number };
-};
-
-/**
  * Props for the {@link StreamPlayer} component.
  *
  * @interface StreamPlayerProps
- * @property {CustomUser}   user        - The stream host's user record. The `id`
- *                                        is used to request a scoped viewer token;
- *                                        `username` is used as the channel display label.
- * @property {CustomStream} stream      - The host's active stream record. Chat
- *                                        configuration flags (`isChatEnabled`,
- *                                        `isChatDelayed`, `isChatFollowersOnly`) are
- *                                        forwarded to the {@link Chat} component.
- * @property {boolean}      isFollowing - Whether the current viewer follows the host.
- *                                        Forwarded to {@link Chat} for followers-only
- *                                        chat access gating.
+ * @property {StreamPlayerUser}   user        - The stream host's user record. The `id`
+ *                                              is used to request a scoped viewer token;
+ *                                              `username` is used as the channel display label.
+ * @property {StreamPlayerStream} stream      - The host's active stream record. Chat
+ *                                              configuration flags (`isChatEnabled`,
+ *                                              `isChatDelayed`, `isChatFollowersOnly`) are
+ *                                              forwarded to the {@link Chat} component.
+ * @property {boolean}            isFollowing - Whether the current viewer follows the host.
+ *                                              Forwarded to {@link Chat} for followers-only
+ *                                              chat access gating.
  */
 interface StreamPlayerProps {
-  stream: CustomStream;
-  user: CustomUser;
+  stream: StreamPlayerStream;
+  user: StreamPlayerUser;
   isFollowing: boolean;
 }
 
@@ -123,10 +76,10 @@ interface StreamPlayerProps {
  * Requires `NEXT_PUBLIC_LIVEKIT_WS_URL` to be defined in the environment
  * for `LiveKitRoom` to connect to the correct LiveKit server instance.
  *
- * @param {StreamPlayerProps} props              - Component props.
- * @param {CustomUser}        props.user         - The stream host's user data.
- * @param {CustomStream}      props.stream       - The host's active stream data.
- * @param {boolean}           props.isFollowing  - Whether the viewer follows the host.
+ * @param {StreamPlayerProps}   props              - Component props.
+ * @param {StreamPlayerUser}    props.user         - The stream host's user data.
+ * @param {StreamPlayerStream}  props.stream       - The host's active stream data.
+ * @param {boolean}             props.isFollowing  - Whether the viewer follows the host.
  * @returns {JSX.Element} The full stream player UI, a {@link StreamPlayerSkeleton}
  *   while loading, or an error/retry UI if a valid token could not be obtained.
  *

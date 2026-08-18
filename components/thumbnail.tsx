@@ -103,6 +103,7 @@ export function Thumbnail({ src, fallback, isLive, username }: ThumbnailProps) {
         alt={`${username}'s stream thumbnail`}
         className="rounded-md object-cover transition-transform group-hover:translate-x-2 group-hover:-translate-y-2"
         fill
+        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 256px"
         src={src}
       />
     );

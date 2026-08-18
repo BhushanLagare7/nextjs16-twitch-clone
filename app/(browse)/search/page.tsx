@@ -19,7 +19,7 @@ import { Results, ResultsSkeleton } from "./_components/results";
  */
 interface SearchPageProps {
   searchParams: Promise<{
-    term?: string;
+    term?: string | string[];
   }>;
 }
 
@@ -43,8 +43,11 @@ interface SearchPageProps {
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { term } = await searchParams;
 
+  // Normalize term: if repeated query params produce an array, take the first value
+  const normalizedTerm = Array.isArray(term) ? term[0] : term;
+
   // If there is no search term, redirect to home page
-  if (!term) {
+  if (!normalizedTerm) {
     redirect("/");
   }
 
@@ -52,7 +55,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     <div className="mx-auto h-full max-w-screen-2xl p-8">
       {/* Show ResultsSkeleton while Results fetches stream data */}
       <Suspense fallback={<ResultsSkeleton />}>
-        <Results term={term} />
+        <Results term={normalizedTerm} />
       </Suspense>
     </div>
   );

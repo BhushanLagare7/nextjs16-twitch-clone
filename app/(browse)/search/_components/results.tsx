@@ -8,7 +8,8 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSearch } from "@/lib/search-service";
 
-import { ResultCard, ResultCardSkeleton } from "./result-card";
+import { ResultCardSkeleton } from "./result-card";
+import { ResultsList } from "./results-list";
 
 /**
  * Props for the {@link Results} component.
@@ -26,8 +27,8 @@ interface ResultsProps {
  *
  * An async Server Component that calls {@link getSearch} with the provided
  * `term`. Renders a heading indicating the search term, a fallback message
- * if no results are found, or a list of {@link ResultCard} components for
- * each matching stream.
+ * if no results are found, or a {@link ResultsList} containing result cards
+ * with "Show more" / "Show fewer" pagination controls.
  *
  * Intended to be rendered inside a `<Suspense>` boundary (see
  * `app/search/page.tsx`) with {@link ResultsSkeleton} as the fallback.
@@ -42,7 +43,7 @@ interface ResultsProps {
  * </Suspense>
  */
 export async function Results({ term }: ResultsProps) {
-  const data = await getSearch(term);
+  const { items: data, nextCursor } = await getSearch(term);
 
   return (
     <div>
@@ -52,18 +53,18 @@ export async function Results({ term }: ResultsProps) {
       </h2>
 
       {/* Empty state: shown when the query returns no matching streams */}
-      {data.length === 0 && (
+      {data.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           No results found. Try searching for something else
         </p>
+      ) : (
+        <ResultsList
+          key={term}
+          initialCursor={nextCursor}
+          initialItems={data}
+          term={term}
+        />
       )}
-
-      {/* Result list: one ResultCard per matching stream */}
-      <div className="flex flex-col gap-y-4">
-        {data.map((result) => (
-          <ResultCard key={result.id} data={result} />
-        ))}
-      </div>
     </div>
   );
 }

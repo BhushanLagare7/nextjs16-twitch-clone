@@ -12,7 +12,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 
 import { StreamPlayer } from "@/components/stream-player";
-import { getUserByUsername } from "@/lib/user-service";
+import { getUserByUsername, getUserExternalId } from "@/lib/user-service";
 
 /**
  * Props for the {@link CreatorPage} component.
@@ -55,9 +55,12 @@ interface CreatorPageProps {
 export default async function CreatorPage({ params }: CreatorPageProps) {
   const { username } = await params;
   const externalUser = await currentUser();
-  const user = await getUserByUsername(username);
+  const [user, ownerExternalId] = await Promise.all([
+    getUserByUsername(username),
+    getUserExternalId(username),
+  ]);
 
-  if (!user || user.externalUserId !== externalUser?.id || !user.stream) {
+  if (!user || ownerExternalId !== externalUser?.id || !user.stream) {
     throw new Error("Unauthorized");
   }
 
