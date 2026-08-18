@@ -20,6 +20,7 @@ import { useViewerToken } from "@/hooks/use-viewer-token";
 import { cn } from "@/lib/utils";
 import { useChatSidebar } from "@/store/use-chat-sidebar";
 
+import { AboutCard } from "./about-card";
 import { Chat } from "./chat";
 import { ChatSkeleton } from "./chat-message";
 import { ChatToggle } from "./chat-toggle";
@@ -32,19 +33,25 @@ import { Video, VideoSkeleton } from "./video";
  *
  * @interface StreamPlayerProps
  *
- * @property {User & { stream: Stream | null }} user - The Prisma `User`
- *   record of the stream host, including their nullable `stream` relation.
+ * @property {User & { stream: Stream | null; _count: { followedBy: number } }} user
+ *   The Prisma `User` record of the stream host, augmented with:
+ *   - `stream` — the host's nullable `Stream` relation.
+ *   - `_count.followedBy` — the total number of users following the host,
+ *     passed to {@link AboutCard} for the follower count display.
  *   The user's `id` is used to request a scoped viewer token and as the
- *   LiveKit host identity, and `username` is used as the display label
- *   for the video.
+ *   LiveKit host identity; `username` is used as the display label for
+ *   the video header.
  * @property {Stream} stream - The host's active `Stream` record. Its
  *   `isChatEnabled`, `isChatDelayed`, and `isChatFollowersOnly` flags are
- *   passed through to the {@link Chat} component to configure chat behavior.
+ *   passed through to the {@link Chat} component to configure chat behaviour.
  * @property {boolean} isFollowing - Whether the current viewer follows the
  *   host. Passed through to {@link Chat} for followers-only chat gating.
  */
 interface StreamPlayerProps {
-  user: User & { stream: Stream | null };
+  user: User & {
+    stream: Stream | null;
+    _count: { followedBy: number };
+  };
   stream: Stream;
   isFollowing: boolean;
 }
@@ -86,6 +93,8 @@ export function StreamPlayer({ user, stream, isFollowing }: StreamPlayerProps) {
    * connection is torn down mid-flight ("cannot send signal request before
    * connected" / "websocket error during connection establishment"). They
    * are benign cleanup race conditions and are logged at debug level.
+   *
+   * @param {Error} error - The error emitted by the LiveKit room.
    */
   const onError = useCallback((error: Error) => {
     console.debug(
@@ -157,6 +166,13 @@ export function StreamPlayer({ user, stream, isFollowing }: StreamPlayerProps) {
             thumbnailUrl={stream.thumbnailUrl}
             viewerIdentity={identity}
           />
+          <AboutCard
+            bio={user.bio}
+            followedByCount={user._count.followedBy}
+            hostIdentity={user.id}
+            hostName={user.username}
+            viewerIdentity={identity}
+          />
         </div>
         <div className={cn("col-span-1", collapsed && "hidden")}>
           <Chat
@@ -177,7 +193,7 @@ export function StreamPlayer({ user, stream, isFollowing }: StreamPlayerProps) {
 /**
  * Loading state for {@link StreamPlayer}, rendered while the viewer token
  * is being fetched. Mirrors the real layout's grid structure with skeleton
- * placeholders for the video and chat panel.
+ * placeholders for the video, header, and chat panel.
  *
  * @function StreamPlayerSkeleton
  * @returns {JSX.Element} The stream player skeleton UI.

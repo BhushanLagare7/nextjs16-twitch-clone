@@ -1,7 +1,7 @@
 /**
  * @file error.tsx
- * @description Client-side error boundary page for the browse section.
- * Displayed when an unexpected error occurs while browsing streams or content.
+ * @description Client-side error boundary page for user profile/stream pages.
+ * Displayed when an unexpected error occurs while loading a user's stream or profile.
  * Provides a user-friendly message and a link to navigate back to the home page.
  */
 
@@ -12,15 +12,15 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 /**
- * BrowseErrorPage component.
+ * UserErrorPage component.
  *
  * Renders a centered error message with a navigation button
  * that redirects the user back to the home page.
- * Used as a Next.js error boundary within the browse route segment.
+ * Used as a Next.js error boundary within the user profile route segment.
  *
  * @returns {JSX.Element} A full-height centered layout displaying a generic error message.
  */
-export default function BrowseErrorPage() {
+export default function UserErrorPage() {
   return (
     <div className="flex h-full flex-col items-center justify-center space-y-4 text-muted-foreground">
       {/* Generic error message displayed when something goes wrong */}

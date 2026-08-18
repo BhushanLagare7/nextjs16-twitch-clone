@@ -13,7 +13,8 @@
 import { db } from "@/lib/db";
 
 /**
- * Retrieves a single user record from the database by their username.
+ * Retrieves a single user record from the database by their username,
+ * including their associated `stream` relation and follower count.
  *
  * Performs a unique lookup using the `username` field, which is expected
  * to be a unique constraint in the Prisma schema. Returns `null` if no
@@ -24,8 +25,12 @@ import { db } from "@/lib/db";
  *
  * @param {string} username - The unique username to search for.
  *
- * @returns {Promise<import("@prisma/client").User | null>} A promise that
- *   resolves to the matching Prisma `User` record, or `null` if not found.
+ * @returns {Promise<(import("@/generated/prisma").User & {
+ *   stream: import("@/generated/prisma").Stream | null;
+ *   _count: { followedBy: number };
+ * }) | null>} A promise that resolves to the matching Prisma `User` record
+ *   with its `stream` relation and `_count.followedBy` aggregate included,
+ *   or `null` if not found.
  *
  * @example
  * const user = await getUserByUsername("johndoe");
@@ -40,6 +45,11 @@ export async function getUserByUsername(username: string) {
     },
     include: {
       stream: true,
+      _count: {
+        select: {
+          followedBy: true,
+        },
+      },
     },
   });
 
@@ -47,7 +57,8 @@ export async function getUserByUsername(username: string) {
 }
 
 /**
- * Retrieves a single user record from the database by their internal ID.
+ * Retrieves a single user record from the database by their internal ID,
+ * including their associated `stream` relation.
  *
  * Performs a unique lookup using the `id` field (the database primary key).
  * Returns `null` if no user with the given ID exists.
@@ -57,8 +68,10 @@ export async function getUserByUsername(username: string) {
  *
  * @param {string} id - The unique internal database ID of the user.
  *
- * @returns {Promise<import("@prisma/client").User | null>} A promise that
- *   resolves to the matching Prisma `User` record, or `null` if not found.
+ * @returns {Promise<(import("@/generated/prisma").User & {
+ *   stream: import("@/generated/prisma").Stream | null;
+ * }) | null>} A promise that resolves to the matching Prisma `User` record
+ *   with its `stream` relation included, or `null` if not found.
  *
  * @example
  * const user = await getUserById("clx1abc2def3ghi4jkl5");
@@ -68,9 +81,7 @@ export async function getUserByUsername(username: string) {
  */
 export async function getUserById(id: string) {
   const user = await db.user.findUnique({
-    where: {
-      id,
-    },
+    where: { id },
     include: {
       stream: true,
     },
