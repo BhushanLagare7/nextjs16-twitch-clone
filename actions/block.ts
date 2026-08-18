@@ -33,7 +33,7 @@ if (!apiUrl || !apiKey || !apiSecret) {
  * LiveKit RoomServiceClient instance for managing room participants.
  * Used to remove blocked users from active live streams.
  */
-const roomService = new RoomServiceClient(apiUrl!, apiKey!, apiSecret!);
+const roomService = new RoomServiceClient(apiUrl, apiKey, apiSecret);
 
 /**
  * Blocks a user by their ID and removes them from the current user's live room (if present).
@@ -51,15 +51,11 @@ export async function onBlock(id: string) {
   // Retrieve the currently authenticated user.
   const self = await getSelf();
 
-  let blockedUser;
-
-  try {
-    // Attempt to block the user in the database.
-    blockedUser = await blockUser(id);
-  } catch {
-    // Silently ignore errors — this likely means the current user is a guest
-    // and does not have permission to block users.
-  }
+  // Block the user in the database. Errors (e.g. "Cannot block yourself",
+  // "Already blocked", or database failures) are intentionally not caught
+  // so callers (e.g. community-item.tsx) can distinguish success from
+  // failure and show the correct toast.
+  const blockedUser = await blockUser(id);
 
   try {
     // Attempt to remove the blocked user from the current user's LiveKit room.

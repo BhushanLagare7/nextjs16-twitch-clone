@@ -13,8 +13,8 @@
 
 import { revalidatePath } from "next/cache";
 
-import { User } from "@/generated/prisma";
 import { getSelf } from "@/lib/auth-service";
+import { BIO_MAX_LENGTH } from "@/lib/constants";
 import { db } from "@/lib/db";
 
 /**
@@ -44,8 +44,23 @@ import { db } from "@/lib/db";
  * // Inside a client component
  * await updateUser({ bio: "Hello, world!" });
  */
-export async function updateUser(values: Partial<User>) {
+/**
+ * Input accepted by {@link updateUser}.
+ *
+ * Only `bio` is exposed to prevent mass-assignment of other User fields.
+ */
+interface UpdateUserInput {
+  bio?: string | null;
+}
+
+export async function updateUser(values: UpdateUserInput) {
   const self = await getSelf();
+
+  // Trim whitespace and enforce the server-side maximum length.
+  const sanitizedBio =
+    typeof values.bio === "string"
+      ? values.bio.trim().slice(0, BIO_MAX_LENGTH)
+      : values.bio;
 
   /**
    * Allowlist of fields that may be written to the database.
@@ -53,7 +68,7 @@ export async function updateUser(values: Partial<User>) {
    * mass-assignment of sensitive columns (e.g., `role`, `externalUserId`).
    */
   const validData = {
-    bio: values.bio,
+    bio: sanitizedBio,
   };
 
   const user = await db.user.update({

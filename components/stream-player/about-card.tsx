@@ -103,9 +103,11 @@ export function AboutCard({
           <span className="font-semibold text-primary">{followedByCount}</span>{" "}
           {followedByLabel}
         </div>
-        {/* Render the host's bio or a default placeholder when unset */}
+        {/* Render the host's bio or a default placeholder when unset / blank */}
         <p className="text-sm">
-          {bio ?? "This user prefers to keep an air of mystery about them."}
+          {bio && bio.trim()
+            ? bio
+            : "This user prefers to keep an air of mystery about them."}
         </p>
       </div>
     </div>

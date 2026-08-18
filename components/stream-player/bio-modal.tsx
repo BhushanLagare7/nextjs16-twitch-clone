@@ -13,7 +13,13 @@
 
 "use client";
 
-import { ComponentRef, useRef, useState, useTransition } from "react";
+import {
+  ComponentRef,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 
 import { toast } from "sonner";
 
@@ -28,6 +34,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { BIO_MAX_LENGTH } from "@/lib/constants";
 
 /**
  * Props for the {@link BioModal} component.
@@ -79,6 +86,28 @@ export function BioModal({ initialValue }: BioModalProps) {
   /** Local controlled state for the textarea, seeded from `initialValue`. */
   const [value, setValue] = useState(initialValue || "");
 
+  // Reset local value when initialValue changes (e.g. after a successful save
+  // revalidates the page and the parent re-renders with fresh data).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setValue(initialValue || "");
+  }, [initialValue]);
+
+  /** Controlled open/close state for the dialog. */
+  const [open, setOpen] = useState(false);
+
+  /**
+   * Handles dialog open/close state changes.
+   * Resets the textarea value to the current persisted bio when closing,
+   * discarding any unsaved local edits.
+   */
+  const onOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      setValue(initialValue || "");
+    }
+  };
+
   /**
    * Handles form submission.
    *
@@ -103,7 +132,7 @@ export function BioModal({ initialValue }: BioModalProps) {
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button className="ml-auto" size="sm" variant="link">
           Edit
@@ -117,6 +146,7 @@ export function BioModal({ initialValue }: BioModalProps) {
           <Textarea
             className="resize-none"
             disabled={isPending}
+            maxLength={BIO_MAX_LENGTH}
             placeholder="User bio"
             value={value}
             onChange={(e) => setValue(e.target.value)}

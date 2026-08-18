@@ -22,8 +22,15 @@ export async function getStreams() {
   try {
     const self = await getSelf();
     userId = self.id;
-  } catch {
-    userId = null;
+  } catch (error) {
+    // Only treat "Unauthorized" (not signed in) as anonymous access.
+    // Any other error (e.g. "Not found" for missing local user record,
+    // or database failures) should propagate.
+    if (error instanceof Error && error.message === "Unauthorized") {
+      userId = null;
+    } else {
+      throw error;
+    }
   }
 
   // Build the where clause conditionally:

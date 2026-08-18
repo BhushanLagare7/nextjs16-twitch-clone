@@ -24,7 +24,7 @@ import { clerkMiddleware } from "@clerk/nextjs/server";
  * - Authentication: `/sign-in`, `/sign-up` and nested paths
  * - Dynamic user stream pages: `/:username` (single-segment root path)
  */
-const isPublicRoute = (pathname: string): boolean => {
+export const isPublicRoute = (pathname: string): boolean => {
   if (
     pathname === "/" ||
     pathname === "/api/webhooks" ||
@@ -39,8 +39,19 @@ const isPublicRoute = (pathname: string): boolean => {
     return true;
   }
 
+  /**
+   * Reserved root-level segments that require authentication.
+   * These MUST be excluded from the /:username public-route fallback.
+   */
+  const PROTECTED_ROOT_SEGMENTS = new Set(["u"]);
+
   // Matches single root-level dynamic route "/:username" (e.g. "/ninja", but not "/u/ninja" or nested paths)
-  return /^\/[^/]+$/.test(pathname);
+  if (/^\/[^/]+$/.test(pathname)) {
+    const segment = pathname.slice(1);
+    return !PROTECTED_ROOT_SEGMENTS.has(segment);
+  }
+
+  return false;
 };
 
 /**

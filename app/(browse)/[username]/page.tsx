@@ -49,11 +49,11 @@ export default async function UserPage({ params }: UserPageProps) {
     notFound();
   }
 
-  // Check if the current viewer is following the user.
-  const isFollowing = await isFollowingUser(user.id);
-
-  // Check if the current viewer has been blocked by the user.
-  const isBlocked = await isBlockedByUser(user.id);
+  // Check follow and block status concurrently since they are independent.
+  const [isFollowing, isBlocked] = await Promise.all([
+    isFollowingUser(user.id),
+    isBlockedByUser(user.id),
+  ]);
 
   // Redirect to the 404 page if the current viewer is blocked by this user.
   if (isBlocked) {
