@@ -55,7 +55,7 @@ export type StreamPlayerStream = NonNullable<StreamPlayerUser["stream"]>;
  *
  * Used primarily for public-facing profile/stream pages where only a
  * limited subset of user fields should be exposed. Does **not** include
- * `externalUserId`; use {@link getUserExternalId} for authorization checks.
+ * `externalUserId`; use {@link getUserByUsernameWithExternalId} for authorization checks.
  *
  * @param username - The unique username to look up.
  * @returns The matching user (with `stream` and `_count.followedBy`
@@ -73,24 +73,24 @@ export async function getUserByUsername(username: string) {
 }
 
 /**
- * Retrieves the `externalUserId` for a given username.
- *
- * Used exclusively for server-side authorization checks (e.g. verifying
- * the authenticated Clerk user owns the channel). This value should
- * never be serialized to client components.
+ * Retrieves a user by their unique username, including both the public fields
+ * required by `StreamPlayer` and `externalUserId` for server-side authorization checks.
  *
  * @param username - The unique username to look up.
- * @returns The external user ID, or `null` if no user is found.
+ * @returns The matching user record including `externalUserId`, or `null` if not found.
  */
-export async function getUserExternalId(
-  username: string,
-): Promise<string | null> {
-  const result = await db.user.findUnique({
-    where: { username },
-    select: { externalUserId: true },
+export async function getUserByUsernameWithExternalId(username: string) {
+  const user = await db.user.findUnique({
+    where: {
+      username,
+    },
+    select: {
+      ...streamPlayerUserSelect,
+      externalUserId: true,
+    },
   });
 
-  return result?.externalUserId ?? null;
+  return user;
 }
 
 /**

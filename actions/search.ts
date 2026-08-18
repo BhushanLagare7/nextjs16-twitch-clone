@@ -14,7 +14,7 @@ import { getSearch } from "@/lib/search-service";
  *
  * @param {string} [term] - The search query term.
  * @param {string} [cursor] - The cursor stream ID for pagination continuation.
- * @returns {Promise<{ items: Array<Stream & { user: User }>; nextCursor: string | null }>}
+ * @returns {Promise<{ items: Array<Stream & { user: Pick<User, "username" | "imageUrl"> }>; nextCursor: string | null }>}
  *          The search results page and the next cursor.
  */
 export async function getMoreSearchResults(term?: string, cursor?: string) {

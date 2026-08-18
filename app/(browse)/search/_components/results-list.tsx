@@ -19,7 +19,9 @@ import { Stream, User } from "@/generated/prisma";
 
 import { ResultCard } from "./result-card";
 
-type SearchResultItem = Stream & { user: User };
+type SearchResultItem = Stream & {
+  user: Pick<User, "username" | "imageUrl">;
+};
 
 /**
  * Props for the {@link ResultsList} component.

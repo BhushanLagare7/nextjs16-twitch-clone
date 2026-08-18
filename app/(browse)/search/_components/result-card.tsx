@@ -18,13 +18,16 @@ import { Stream, User } from "@/generated/prisma";
  * Props for the {@link ResultCard} component.
  *
  * @interface ResultCardProps
- * @property {Stream & { user: User }} data - A Prisma `Stream` record joined
- *   with its related `User`. Provides all data required to render the card:
- *   the stream thumbnail, live status, name, last-updated timestamp, and the
- *   streamer's username and profile image.
+ * @property {Stream & { user: Pick<User, "username" | "imageUrl"> }} data - A
+ *   Prisma `Stream` record joined with a narrowed `User` payload (containing
+ *   only `username` and `imageUrl`). Provides all data required to render
+ *   the card: the stream thumbnail, live status, name, last-updated timestamp,
+ *   and the streamer's username and profile image.
  */
 interface ResultCardProps {
-  data: Stream & { user: User };
+  data: Stream & {
+    user: Pick<User, "username" | "imageUrl">;
+  };
 }
 
 /**
@@ -35,9 +38,9 @@ interface ResultCardProps {
  * {@link VerifiedMark}, the stream name, and how long ago the stream was
  * last updated (formatted with `date-fns`).
  *
- * @param {ResultCardProps}            props      - Component props.
- * @param {Stream & { user: User }}    props.data - The stream and user data
- *   used to populate the card.
+ * @param {ResultCardProps} props - Component props.
+ * @param {Stream & { user: Pick<User, "username" | "imageUrl"> }} props.data -
+ *   The stream and narrowed user data used to populate the card.
  * @returns {JSX.Element} A linked stream result card.
  *
  * @example

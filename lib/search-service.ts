@@ -26,10 +26,11 @@ export const SEARCH_PAGE_SIZE = 20;
  * @param cursor - Optional stream ID to continue pagination from. When
  *                 provided, results start after this record.
  * @returns An object containing `items` (the matching streams, each
- *          including its associated `user`) and `nextCursor` (the ID to
- *          pass for the next page, or `null` if no more results exist).
- *          Items are ordered by live status first (live streams first) and
- *          then by most recently updated.
+ *          including its associated `user` with only public username and
+ *          imageUrl fields) and `nextCursor` (the ID to pass for the next page,
+ *          or `null` if no more results exist). Items are ordered by live
+ *          status first (live streams first), then by most recently updated,
+ *          with `id` as a deterministic tie-breaker.
  */
 export async function getSearch(term?: string, cursor?: string) {
   let userId: string | null = null;
@@ -69,9 +70,14 @@ export async function getSearch(term?: string, cursor?: string) {
   const streams = await db.stream.findMany({
     where,
     include: {
-      user: true,
+      user: {
+        select: {
+          username: true,
+          imageUrl: true,
+        },
+      },
     },
-    orderBy: [{ isLive: "desc" }, { updatedAt: "desc" }],
+    orderBy: [{ isLive: "desc" }, { updatedAt: "desc" }, { id: "desc" }],
     take: SEARCH_PAGE_SIZE + 1,
     ...(cursor && {
       cursor: { id: cursor },
