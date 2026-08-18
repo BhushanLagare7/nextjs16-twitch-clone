@@ -1,3 +1,4 @@
+import { Prisma } from "@/generated/prisma";
 import { getSelf } from "@/lib/auth-service";
 import { db } from "@/lib/db";
 
@@ -36,7 +37,7 @@ export async function getStreams() {
   // Build the where clause conditionally:
   // - Authenticated users should not see streams from users blocking them.
   // - Anonymous users see all streams (no filtering).
-  const where = userId
+  const where: Prisma.StreamWhereInput | undefined = userId
     ? {
         user: {
           NOT: {

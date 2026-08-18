@@ -1,55 +1,92 @@
-/**
- * @file lib/user-service.ts
- * @description Service functions for retrieving user records from the database.
- *
- * Provides reusable, server-side data-access helpers for user lookups.
- * All functions in this module interact directly with the Prisma client
- * and are intended to be called from async server components or other
- * server-side service modules.
- *
- * @module user-service
- */
-
+import { Prisma } from "@/generated/prisma";
 import { db } from "@/lib/db";
 
 /**
- * Retrieves a single user record from the database by their username,
- * including their associated `stream` relation and follower count.
+ * Prisma select object defining the stream fields required by
+ * `StreamPlayer`. Kept narrow to avoid over-fetching.
+ */
+const streamPlayerStreamSelect = {
+  id: true,
+  isLive: true,
+  isChatDelayed: true,
+  isChatEnabled: true,
+  isChatFollowersOnly: true,
+  thumbnailUrl: true,
+  name: true,
+} satisfies Prisma.StreamSelect;
+
+/**
+ * Prisma select object defining the user fields required by
+ * `StreamPlayer`. Deliberately excludes `externalUserId` to
+ * prevent leaking auth-sensitive data to client components.
+ */
+const streamPlayerUserSelect = {
+  id: true,
+  username: true,
+  bio: true,
+  imageUrl: true,
+  stream: {
+    select: streamPlayerStreamSelect,
+  },
+  _count: {
+    select: {
+      followedBy: true,
+    },
+  },
+} satisfies Prisma.UserSelect;
+
+/**
+ * Prisma-derived user type containing only the fields consumed by
+ * `StreamPlayer`. Does not include `externalUserId`.
+ */
+export type StreamPlayerUser = Prisma.UserGetPayload<{
+  select: typeof streamPlayerUserSelect;
+}>;
+
+/**
+ * Prisma-derived stream type matching the stream sub-selection within
+ * {@link StreamPlayerUser}.
+ */
+export type StreamPlayerStream = NonNullable<StreamPlayerUser["stream"]>;
+
+/**
+ * Retrieves a user by their unique username, including their stream
+ * configuration and follower count.
  *
- * Performs a unique lookup using the `username` field, which is expected
- * to be a unique constraint in the Prisma schema. Returns `null` if no
- * user with the given username exists.
+ * Used primarily for public-facing profile/stream pages where only a
+ * limited subset of user fields should be exposed. Does **not** include
+ * `externalUserId`; use {@link getUserByUsernameWithExternalId} for authorization checks.
  *
- * @async
- * @function getUserByUsername
- *
- * @param {string} username - The unique username to search for.
- *
- * @returns {Promise<(import("@/generated/prisma").User & {
- *   stream: import("@/generated/prisma").Stream | null;
- *   _count: { followedBy: number };
- * }) | null>} A promise that resolves to the matching Prisma `User` record
- *   with its `stream` relation and `_count.followedBy` aggregate included,
- *   or `null` if not found.
- *
- * @example
- * const user = await getUserByUsername("johndoe");
- * if (!user) {
- *   // Handle missing user (e.g., redirect to 404)
- * }
+ * @param username - The unique username to look up.
+ * @returns The matching user (with `stream` and `_count.followedBy`
+ *          selected), or `null` if no user is found.
  */
 export async function getUserByUsername(username: string) {
   const user = await db.user.findUnique({
     where: {
       username,
     },
-    include: {
-      stream: true,
-      _count: {
-        select: {
-          followedBy: true,
-        },
-      },
+    select: streamPlayerUserSelect,
+  });
+
+  return user;
+}
+
+/**
+ * Retrieves a user by their unique username, including both the public fields
+ * required by `StreamPlayer` and `externalUserId` for server-side authorization checks.
+ *
+ * @param username - The unique username to look up.
+ * @returns The matching user record including `externalUserId`, or `null` if not found.
+ */
+export async function getUserByUsernameWithExternalId(username: string) {
+  const user = await db.user.findUnique({
+    where: {
+      username,
+    },
+    select: {
+      ...streamPlayerUserSelect,
+      externalUserId: true,
     },
   });
 
@@ -57,27 +94,16 @@ export async function getUserByUsername(username: string) {
 }
 
 /**
- * Retrieves a single user record from the database by their internal ID,
- * including their associated `stream` relation.
+ * Retrieves a user by their internal database ID, including the full
+ * related `stream` record.
  *
- * Performs a unique lookup using the `id` field (the database primary key).
- * Returns `null` if no user with the given ID exists.
+ * Unlike {@link getUserByUsername}, this returns the complete user model
+ * (no field selection), so it should be used in internal/trusted contexts
+ * where exposing all user fields is acceptable.
  *
- * @async
- * @function getUserById
- *
- * @param {string} id - The unique internal database ID of the user.
- *
- * @returns {Promise<(import("@/generated/prisma").User & {
- *   stream: import("@/generated/prisma").Stream | null;
- * }) | null>} A promise that resolves to the matching Prisma `User` record
- *   with its `stream` relation included, or `null` if not found.
- *
- * @example
- * const user = await getUserById("clx1abc2def3ghi4jkl5");
- * if (!user) {
- *   throw new Error("User not found");
- * }
+ * @param id - The internal user ID to look up.
+ * @returns The matching user (with the full `stream` relation included),
+ *          or `null` if no user is found.
  */
 export async function getUserById(id: string) {
   const user = await db.user.findUnique({

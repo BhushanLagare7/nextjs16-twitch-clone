@@ -12,7 +12,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 
 import { StreamPlayer } from "@/components/stream-player";
-import { getUserByUsername } from "@/lib/user-service";
+import { getUserByUsernameWithExternalId } from "@/lib/user-service";
 
 /**
  * Props for the {@link CreatorPage} component.
@@ -54,17 +54,25 @@ interface CreatorPageProps {
  */
 export default async function CreatorPage({ params }: CreatorPageProps) {
   const { username } = await params;
-  const externalUser = await currentUser();
-  const user = await getUserByUsername(username);
+  const [externalUser, owner] = await Promise.all([
+    currentUser(),
+    getUserByUsernameWithExternalId(username),
+  ]);
 
-  if (!user || user.externalUserId !== externalUser?.id || !user.stream) {
+  if (!owner || !owner.stream) {
+    throw new Error("Unauthorized");
+  }
+
+  const { externalUserId, ...user } = owner;
+
+  if (externalUserId !== externalUser?.id) {
     throw new Error("Unauthorized");
   }
 
   return (
     <div className="h-full">
       {/* isFollowing is always true for the creator viewing their own stream */}
-      <StreamPlayer isFollowing stream={user.stream} user={user} />
+      <StreamPlayer isFollowing stream={owner.stream} user={user} />
     </div>
   );
 }
