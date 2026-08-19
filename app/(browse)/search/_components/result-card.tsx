@@ -25,9 +25,10 @@ import { Stream, User } from "@/generated/prisma";
  *   and the streamer's username and profile image.
  */
 interface ResultCardProps {
-  data: Stream & {
-    user: Pick<User, "username" | "imageUrl">;
-  };
+  data: Pick<
+    Stream,
+    "id" | "name" | "thumbnailUrl" | "isLive" | "updatedAt"
+  > & { user: Pick<User, "username" | "imageUrl"> };
 }
 
 /**
@@ -85,8 +86,8 @@ export function ResultCard({ data }: ResultCardProps) {
  * ResultCardSkeleton component - Animated loading placeholder for {@link ResultCard}.
  *
  * Mirrors the layout of {@link ResultCard} with skeleton blocks in place of
- * the thumbnail, username, stream name, and timestamp. Rendered by
- * {@link ResultsSkeleton} while search results are being fetched.
+ * the thumbnail, username, stream name, and timestamp. Rendered while
+ * search results are being fetched.
  *
  * @returns {JSX.Element} An animated skeleton placeholder for a result card.
  *

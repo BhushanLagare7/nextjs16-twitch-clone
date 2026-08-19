@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 import { verifyWebhook } from "@clerk/nextjs/webhooks";
 
+import { resetIngresses } from "@/actions/ingress";
 import { db } from "@/lib/db";
 
 /**
@@ -94,6 +95,8 @@ export async function POST(req: NextRequest) {
         if (!evt.data.id) {
           return new Response("Missing user ID in payload", { status: 400 });
         }
+
+        await resetIngresses(evt.data.id);
 
         await db.user.deleteMany({
           where: {

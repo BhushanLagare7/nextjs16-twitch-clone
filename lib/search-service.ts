@@ -69,13 +69,18 @@ export async function getSearch(term?: string, cursor?: string) {
 
   const streams = await db.stream.findMany({
     where,
-    include: {
+    select: {
       user: {
         select: {
           username: true,
           imageUrl: true,
         },
       },
+      id: true,
+      name: true,
+      isLive: true,
+      thumbnailUrl: true,
+      updatedAt: true,
     },
     orderBy: [{ isLive: "desc" }, { updatedAt: "desc" }, { id: "desc" }],
     take: SEARCH_PAGE_SIZE + 1,

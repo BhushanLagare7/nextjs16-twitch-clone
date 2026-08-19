@@ -150,3 +150,29 @@ export async function unblockUser(id: string) {
     throw error;
   }
 }
+
+/**
+ * Retrieves all users blocked by the currently authenticated user.
+ *
+ * Queries the `block` table for every record where the authenticated user
+ * is the blocker, including the full `blocked` user relation on each record.
+ *
+ * @returns An array of block records, each including the `blocked` user relation.
+ *   Returns an empty array if the authenticated user has not blocked anyone.
+ * @throws {Error} If the current user cannot be authenticated (propagated
+ *   from {@link getSelf}) or if the database query fails.
+ */
+export async function getBlockedUsers() {
+  const self = await getSelf();
+
+  const blockedUsers = await db.block.findMany({
+    where: {
+      blockerId: self.id,
+    },
+    include: {
+      blocked: true,
+    },
+  });
+
+  return blockedUsers;
+}

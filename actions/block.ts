@@ -39,13 +39,15 @@ const roomService = new RoomServiceClient(apiUrl, apiKey, apiSecret);
  * Blocks a user by their ID and removes them from the current user's live room (if present).
  *
  * - Attempts to block the user in the database via `blockUser`.
- * - Silently handles the case where the current user is a guest (block may fail).
+ * - Errors (e.g. "Cannot block yourself", "Already blocked", or database
+ *   failures) are intentionally not caught so callers can distinguish
+ *   success from failure and show the correct toast.
  * - Attempts to remove the blocked user from the active LiveKit room.
  * - Silently handles the case where the user is not in the room.
  * - Revalidates the community page to reflect the updated block list.
  *
  * @param {string} id - The ID of the user to block.
- * @returns {Promise<object | undefined>} The blocked user record, or undefined if the block failed (e.g., guest user).
+ * @returns {Promise<object>} The created block record returned from the database.
  */
 export async function onBlock(id: string) {
   // Retrieve the currently authenticated user.
@@ -75,22 +77,17 @@ export async function onBlock(id: string) {
  * Unblocks a previously blocked user by their ID.
  *
  * - Unblocks the user in the database via `unblockUser`.
- * - Revalidates the home page and the unblocked user's profile page (if applicable).
+ * - Revalidates the current user's community page to reflect the updated block list.
  *
  * @param {string} id - The ID of the user to unblock.
- * @returns {Promise<object>} The unblocked user record returned from the database.
+ * @returns {Promise<object>} The deleted block record returned from the database.
  */
 export async function onUnblock(id: string) {
+  const self = await getSelf();
   // Remove the block relationship from the database.
   const unblockedUser = await unblockUser(id);
 
-  // Revalidate the home page to reflect the updated block list.
-  revalidatePath("/");
-
-  if (unblockedUser) {
-    // Revalidate the unblocked user's profile page if the unblock was successful.
-    revalidatePath(`/${unblockedUser.blocked.username}`);
-  }
+  revalidatePath(`/u/${self.username}/community`);
 
   return unblockedUser;
 }
