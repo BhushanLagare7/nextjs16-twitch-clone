@@ -10,12 +10,22 @@
  * @throws {Error} If no stream is found for the authenticated user.
  */
 
+import type { Metadata } from "next";
+
 import { getSelf } from "@/lib/auth-service";
 import { getStreamByUserId } from "@/lib/stream-service";
 
 import { ConnectModal } from "./_components/connect-modal";
 import { KeyCard } from "./_components/key-card";
 import { UrlCard } from "./_components/url-card";
+
+/**
+ * Metadata for the Keys & URLs settings page.
+ */
+export const metadata: Metadata = {
+  title: "Stream Keys & Connection URLs",
+  description: "View and generate your RTMP / WHIP streaming server URLs and stream keys.",
+};
 
 /**
  * KeysPage - Server component that renders the "Keys & URLs" settings page.

@@ -11,6 +11,7 @@
  * @module CreatorLayout
  */
 
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { getSelfByUsername } from "@/lib/auth-service";
@@ -18,6 +19,17 @@ import { getSelfByUsername } from "@/lib/auth-service";
 import { Container } from "./_components/container";
 import { Navbar } from "./_components/navbar";
 import { Sidebar } from "./_components/sidebar";
+
+/**
+ * Metadata configuration for creator dashboard pages.
+ * Prevents search engines from crawling or indexing private dashboard routes.
+ */
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 /**
  * Props for the CreatorLayout component.

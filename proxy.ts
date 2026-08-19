@@ -22,6 +22,7 @@ import { clerkMiddleware } from "@clerk/nextjs/server";
  * - Webhooks: `/api/webhooks` and nested paths
  * - UploadThing: `/api/uploadthing` and nested paths
  * - Authentication: `/sign-in`, `/sign-up` and nested paths
+ * - Search: `/search` and nested paths
  * - Dynamic user stream pages: `/:username` (single-segment root path)
  */
 export const isPublicRoute = (pathname: string): boolean => {
@@ -34,7 +35,9 @@ export const isPublicRoute = (pathname: string): boolean => {
     pathname === "/sign-in" ||
     pathname.startsWith("/sign-in/") ||
     pathname === "/sign-up" ||
-    pathname.startsWith("/sign-up/")
+    pathname.startsWith("/sign-up/") ||
+    pathname === "/search" ||
+    pathname.startsWith("/search/")
   ) {
     return true;
   }
@@ -57,7 +60,7 @@ export const isPublicRoute = (pathname: string): boolean => {
 /**
  * Clerk middleware instance that handles authentication for all matched routes.
  *
- * - Public routes (/, /api/webhooks, /api/uploadthing, /:username, /sign-in, /sign-up) bypass authentication checks.
+ * - Public routes (/, /api/webhooks, /api/uploadthing, /:username, /sign-in, /sign-up, /search) bypass authentication checks.
  * - All other protected routes check authentication state and redirect signed-out users to sign-in.
  *
  * @default

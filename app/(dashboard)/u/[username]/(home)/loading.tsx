@@ -18,7 +18,7 @@ import { StreamPlayerSkeleton } from "@/components/stream-player";
  */
 export default function CreatorLoading() {
   return (
-    <div className="h-full">
+    <div className="h-screen">
       <StreamPlayerSkeleton />
     </div>
   );

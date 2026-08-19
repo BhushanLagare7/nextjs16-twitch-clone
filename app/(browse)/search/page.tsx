@@ -5,6 +5,7 @@
  */
 
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { Results, ResultsSkeleton } from "./_components/results";
@@ -13,14 +14,39 @@ import { Results, ResultsSkeleton } from "./_components/results";
  * Props for the {@link SearchPage} component.
  *
  * @interface SearchPageProps
- * @property {object}  searchParams       - URL query parameters.
- * @property {string} [searchParams.term] - The search term entered by the user.
- *                                          If absent, the user is redirected to "/".
+ * @property {Promise<{ term?: string | string[] }>} searchParams - URL query parameters Promise.
  */
 interface SearchPageProps {
   searchParams: Promise<{
     term?: string | string[];
   }>;
+}
+
+/**
+ * Generates search page metadata with robots `noindex, follow` directive
+ * to prevent duplicate content and index bloat from arbitrary search queries.
+ *
+ * @param {SearchPageProps} props - Component properties containing search query params.
+ * @returns {Promise<Metadata>} Metadata object for the search page.
+ */
+export async function generateMetadata({
+  searchParams,
+}: SearchPageProps): Promise<Metadata> {
+  const { term } = await searchParams;
+  const normalizedTerm = Array.isArray(term) ? term[0] : term;
+
+  return {
+    title: normalizedTerm
+      ? `Search: "${normalizedTerm}"`
+      : "Search Live Streams",
+    description: normalizedTerm
+      ? `Browse live streams and content creators matching "${normalizedTerm}" on NexusLive.`
+      : "Search for live streams, creators, and communities on NexusLive.",
+    robots: {
+      index: false,
+      follow: true,
+    },
+  };
 }
 
 /**

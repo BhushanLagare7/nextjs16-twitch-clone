@@ -7,10 +7,20 @@
  * {@link DataTable} of blocked users with an unblock action per row.
  */
 
+import type { Metadata } from "next";
+
 import { getBlockedUsers } from "@/lib/block-service";
 
 import { columns } from "./_components/columns";
 import { DataTable } from "./_components/data-table";
+
+/**
+ * Metadata for the community settings dashboard page.
+ */
+export const metadata: Metadata = {
+  title: "Community & Moderation Settings",
+  description: "Manage blocked users, user permissions, and community moderation settings.",
+};
 
 /**
  * CommunityPage component - Displays the Community Settings dashboard page.

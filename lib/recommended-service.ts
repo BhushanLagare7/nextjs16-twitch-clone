@@ -3,6 +3,7 @@
  * @description Service functions for fetching recommended users.
  */
 
+import { Prisma } from "@/generated/prisma";
 import { db } from "@/lib/db";
 
 import { getSelf } from "./auth-service";
@@ -55,7 +56,7 @@ export async function getRecommended() {
    * - Unauthenticated: `undefined` applies no filter, matching Prisma's
    *   default "no where clause" behaviour.
    */
-  const where = userId
+  const where: Prisma.UserWhereInput | undefined = userId
     ? {
         AND: [
           { NOT: { id: userId } },
@@ -84,9 +85,7 @@ export async function getRecommended() {
         select: { isLive: true },
       },
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: [{ stream: { isLive: "desc" } }, { createdAt: "desc" }],
     take: RECOMMENDED_LIMIT,
   });
 

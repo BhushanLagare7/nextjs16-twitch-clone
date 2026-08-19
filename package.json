@@ -63,5 +63,9 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.11",
     "typescript": "^5"
+  },
+  "overrides": {
+    "deepmerge-ts": "8.0.1",
+    "effect": "3.22.1"
   }
 }

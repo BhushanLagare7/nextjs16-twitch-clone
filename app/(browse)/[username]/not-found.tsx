@@ -5,9 +5,19 @@
  * Provides a user-friendly message and a link to navigate back to the home page.
  */
 
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+
+/**
+ * Metadata for the streamer not found page.
+ */
+export const metadata: Metadata = {
+  title: "User Not Found (404)",
+  description:
+    "The streamer or user channel you were looking for could not be found on NexusLive.",
+};
 
 /**
  * UserNotFoundPage component.
@@ -19,7 +29,7 @@ import { Button } from "@/components/ui/button";
  */
 export default function UserNotFoundPage() {
   return (
-    <div className="flex h-full flex-col items-center justify-center space-y-4 text-muted-foreground">
+    <div className="flex h-screen flex-col items-center justify-center space-y-4 text-muted-foreground">
       {/* 404 error code heading */}
       <h1 className="text-4xl">404</h1>
 

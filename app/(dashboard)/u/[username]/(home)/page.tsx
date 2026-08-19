@@ -9,6 +9,8 @@
  * @module CreatorPage
  */
 
+import type { Metadata } from "next";
+
 import { currentUser } from "@clerk/nextjs/server";
 
 import { StreamPlayer } from "@/components/stream-player";
@@ -25,6 +27,22 @@ import { getUserByUsernameWithExternalId } from "@/lib/user-service";
  */
 interface CreatorPageProps {
   params: Promise<{ username: string }>;
+}
+
+/**
+ * Generates dynamic metadata for the creator's dashboard page.
+ *
+ * @param {CreatorPageProps} props - Component props with route params Promise.
+ * @returns {Promise<Metadata>} Metadata object for the creator dashboard.
+ */
+export async function generateMetadata({
+  params,
+}: CreatorPageProps): Promise<Metadata> {
+  const { username } = await params;
+  return {
+    title: `${username}'s Stream Dashboard`,
+    description: "Manage your live broadcast, stream preview, and chat settings.",
+  };
 }
 
 /**

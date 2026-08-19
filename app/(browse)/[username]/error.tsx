@@ -22,7 +22,8 @@ import { Button } from "@/components/ui/button";
  */
 export default function UserErrorPage() {
   return (
-    <div className="flex h-full flex-col items-center justify-center space-y-4 text-muted-foreground">
+    <div className="flex h-screen flex-col items-center justify-center space-y-4 text-muted-foreground">
+      <title>Error - Stream Unavailable | NexusLive</title>
       {/* Generic error message displayed when something goes wrong */}
       <p>Something went wrong</p>
 

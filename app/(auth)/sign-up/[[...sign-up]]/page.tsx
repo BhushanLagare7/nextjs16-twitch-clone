@@ -20,7 +20,17 @@
  * @see {@link https://clerk.com/docs/components/authentication/sign-up} Clerk SignUp Component
  */
 
+import type { Metadata } from "next";
+
 import { SignUp } from "@clerk/nextjs";
+
+/**
+ * Metadata for the Sign Up page.
+ */
+export const metadata: Metadata = {
+  title: "Sign Up",
+  description: "Create a new NexusLive account to start streaming, chatting, and connecting with communities.",
+};
 
 /**
  * SignUpPage component that renders the Clerk authentication sign-up form.

@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
+
 import { getSelf } from "@/lib/auth-service";
 import { getStreamByUserId } from "@/lib/stream-service";
 
 import { ToggleCard } from "./_components/toggle-card";
+
+/**
+ * Metadata for the chat settings dashboard page.
+ */
+export const metadata: Metadata = {
+  title: "Chat Settings",
+  description: "Configure chat permissions, slow mode, and follower-only chat for your stream.",
+};
 
 /**
  * Server-rendered page that lets the authenticated user configure chat
