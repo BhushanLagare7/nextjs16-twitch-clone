@@ -15,13 +15,10 @@ import { toast } from "sonner";
 
 import { getMoreSearchResults } from "@/actions/search";
 import { Button } from "@/components/ui/button";
-import { Stream, User } from "@/generated/prisma";
+import { type SearchResultItem } from "@/lib/search-service";
 
 import { ResultCard } from "./result-card";
 
-type SearchResultItem = Stream & {
-  user: Pick<User, "username" | "imageUrl">;
-};
 
 /**
  * Props for the {@link ResultsList} component.
@@ -57,6 +54,7 @@ export function ResultsList({
 
   /**
    * Fetches the next page of search results and appends them to the current list.
+   * No-ops if there is no available cursor or a fetch is already in progress.
    */
   const handleShowMore = () => {
     if (!cursor || isPending) return;
@@ -73,16 +71,22 @@ export function ResultsList({
   };
 
   /**
-   * Resets the displayed results back to the initial default limit.
+   * Resets the displayed results back to the initial default limit and
+   * restores the original cursor so "Show more" can be used again.
    */
   const handleShowFewer = () => {
     setItems(initialItems);
     setCursor(initialCursor);
   };
 
+  /** True when the result set has grown beyond the server-rendered initial page. */
   const hasExceededDefault =
     initialCursor !== null || items.length > initialItems.length;
+
+  /** True when there are more pages available to fetch from the server. */
   const canShowMore = cursor !== null;
+
+  /** True when the client has loaded additional pages beyond the initial set. */
   const canShowFewer = items.length > initialItems.length;
 
   return (
@@ -104,9 +108,9 @@ export function ResultsList({
               onClick={handleShowMore}
             >
               {isPending ? (
-                <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                <LoaderIcon className="mr-2 size-4 animate-spin" />
               ) : (
-                <ChevronDownIcon className="mr-2 h-4 w-4" />
+                <ChevronDownIcon className="mr-2 size-4" />
               )}
               Show more
             </Button>
@@ -118,7 +122,7 @@ export function ResultsList({
               variant="outline"
               onClick={handleShowFewer}
             >
-              <ChevronUpIcon className="mr-2 h-4 w-4" />
+              <ChevronUpIcon className="mr-2 size-4" />
               Show fewer
             </Button>
           )}

@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 import { verifyWebhook } from "@clerk/nextjs/webhooks";
 
+import { resetIngresses } from "@/actions/ingress";
 import { db } from "@/lib/db";
 
 /**
@@ -93,6 +94,22 @@ export async function POST(req: NextRequest) {
       case "user.deleted": {
         if (!evt.data.id) {
           return new Response("Missing user ID in payload", { status: 400 });
+        }
+
+        // Best-effort cleanup of LiveKit resources. Ignore not-found errors
+        // from LiveKit (e.g. room/ingress already deleted in a previous
+        // delivery), since Clerk webhooks are at-least-once and retries
+        // may re-deliver after resources are already gone. Other errors
+        // still propagate to avoid silently masking real failures.
+        try {
+          await resetIngresses(evt.data.id);
+        } catch (error) {
+          const isNotFound =
+            error instanceof Error &&
+            /not\s*found/i.test(error.message);
+          if (!isNotFound) {
+            throw error;
+          }
         }
 
         await db.user.deleteMany({

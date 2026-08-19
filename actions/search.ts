@@ -7,16 +7,19 @@
 
 "use server";
 
-import { getSearch } from "@/lib/search-service";
+import { getSearch, type SearchResultItem } from "@/lib/search-service";
 
 /**
  * Server action to fetch paginated search results for client components.
  *
  * @param {string} [term] - The search query term.
  * @param {string} [cursor] - The cursor stream ID for pagination continuation.
- * @returns {Promise<{ items: Array<Stream & { user: Pick<User, "username" | "imageUrl"> }>; nextCursor: string | null }>}
+ * @returns {Promise<{ items: SearchResultItem[]; nextCursor: string | null }>}
  *          The search results page and the next cursor.
  */
-export async function getMoreSearchResults(term?: string, cursor?: string) {
+export async function getMoreSearchResults(
+  term?: string,
+  cursor?: string,
+): Promise<{ items: SearchResultItem[]; nextCursor: string | null }> {
   return await getSearch(term, cursor);
 }
