@@ -11,6 +11,11 @@ import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
 
 /**
+ * Revalidate sitemap every hour (3600 seconds) to balance freshness with database load.
+ */
+export const revalidate = 3600;
+
+/**
  * Dynamically builds the sitemap containing static pages and all creator stream channels.
  *
  * Live channels are assigned higher priority and more frequent update cycles

@@ -8,9 +8,11 @@
 
 import React from "react";
 
+import type { Thing, WithContext } from "schema-dts";
+
 interface JsonLdProps {
   /** The structured data schema object following schema.org specifications. */
-  data: Record<string, unknown> | Array<Record<string, unknown>>;
+  data: WithContext<Thing> | Array<WithContext<Thing>>;
 }
 
 /**

@@ -9,6 +9,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import type { BroadcastEvent, WithContext } from "schema-dts";
+
 import { JsonLd } from "@/components/seo/json-ld";
 import { StreamPlayer } from "@/components/stream-player";
 import { isBlockedByUser } from "@/lib/block-service";
@@ -124,7 +126,7 @@ export default async function UserPage({ params }: UserPageProps) {
     notFound();
   }
 
-  const streamSchema = {
+  const streamSchema: WithContext<BroadcastEvent> = {
     "@context": "https://schema.org",
     "@type": "BroadcastEvent",
     name: user.stream.name || `${user.username}'s Live Stream`,

@@ -23,6 +23,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import type { Organization, WebSite, WithContext } from "schema-dts";
 import { extractRouterConfig } from "uploadthing/server";
 
 import { ourFileRouter } from "@/app/api/uploadthing/core";
@@ -55,7 +56,7 @@ export const viewport: Viewport = {
 /**
  * Structured schema definitions for search engine indexing.
  */
-const structuredData = [
+const structuredData: WithContext<WebSite | Organization>[] = [
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -68,7 +69,7 @@ const structuredData = [
         "@type": "EntryPoint",
         urlTemplate: `${appUrl}/search?term={search_term_string}`,
       },
-      "query-input": "required name=search_term_string",
+      query: "required name=search_term_string",
     },
   },
   {
