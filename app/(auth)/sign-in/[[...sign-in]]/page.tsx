@@ -20,7 +20,17 @@
  * @see {@link https://clerk.com/docs/components/authentication/sign-in} Clerk SignIn Component
  */
 
+import type { Metadata } from "next";
+
 import { SignIn } from "@clerk/nextjs";
+
+/**
+ * Metadata for the Sign In page.
+ */
+export const metadata: Metadata = {
+  title: "Sign In",
+  description: "Sign in to your NexusLive account to watch streams and join the community chat.",
+};
 
 /**
  * SignInPage component that renders the Clerk authentication sign-in form.

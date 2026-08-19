@@ -60,8 +60,13 @@
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "prisma": "^7.9.1",
+    "schema-dts": "^2.0.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.11",
     "typescript": "^5"
+  },
+  "overrides": {
+    "deepmerge-ts": "8.0.1",
+    "effect": "3.22.1"
   }
 }

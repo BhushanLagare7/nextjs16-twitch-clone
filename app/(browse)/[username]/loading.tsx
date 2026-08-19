@@ -18,7 +18,7 @@ import { StreamPlayerSkeleton } from "@/components/stream-player";
  */
 export default function UserLoading() {
   return (
-    <div className="h-full">
+    <div className="h-screen">
       {/* Skeleton placeholder displayed while the stream player data is loading */}
       <StreamPlayerSkeleton />
     </div>

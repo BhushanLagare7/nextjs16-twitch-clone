@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
  */
 export default function UserNotFoundPage() {
   return (
-    <div className="flex h-full flex-col items-center justify-center space-y-4 text-muted-foreground">
+    <div className="flex h-screen flex-col items-center justify-center space-y-4 text-muted-foreground">
       {/* 404 error code heading */}
       <h1 className="text-4xl">404</h1>
 

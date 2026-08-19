@@ -19,17 +19,67 @@
 
 import "./globals.css";
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import type { Organization, WebSite, WithContext } from "schema-dts";
 import { extractRouterConfig } from "uploadthing/server";
 
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { ClerkThemeProvider } from "@/components/clerk-theme-provider";
+import { JsonLd } from "@/components/seo/json-ld";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+
+const appUrl =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  (process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000");
+
+/**
+ * Viewport configuration exported separately as per Next.js requirements.
+ * Defines responsive scaling behavior and theme-dependent browser chrome colors.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
+  ],
+};
+
+/**
+ * Structured schema definitions for search engine indexing.
+ */
+const structuredData: WithContext<WebSite | Organization>[] = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "NexusLive",
+    url: appUrl,
+    description: "Where creators and communities connect in real time.",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${appUrl}/search?term={search_term_string}`,
+      },
+      query: "required name=search_term_string",
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "NexusLive",
+    url: appUrl,
+    logo: `${appUrl}/spooky.svg`,
+  },
+];
 
 /**
  * Inter font configuration using Next.js built-in font optimization.
@@ -54,14 +104,63 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
  * or nested layout metadata exports.
  *
  * @type {import('next').Metadata}
- * @property {string} title - Browser tab title and SEO page title
- * @property {string} description - SEO meta description for search engines
- * @property {Object} icons - Favicon and app icon configuration
- * @property {string} icons.icon - Path to the application favicon (SVG format)
  */
 export const metadata: Metadata = {
-  title: "NexusLive",
-  description: "Where creators and communities connect in real time.",
+  metadataBase: new URL(appUrl),
+  title: {
+    default: "NexusLive - Real-Time Creator Live Streaming Platform",
+    template: "%s | NexusLive",
+  },
+  description:
+    "NexusLive is a modern real-time live streaming platform where creators and communities connect, chat, and stream.",
+  keywords: [
+    "live streaming",
+    "game streaming",
+    "creators",
+    "real-time chat",
+    "NexusLive",
+    "video broadcasting",
+    "streamer community",
+  ],
+  authors: [{ name: "NexusLive" }],
+  creator: "NexusLive",
+  publisher: "NexusLive",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "/",
+    siteName: "NexusLive",
+    title: "NexusLive - Real-Time Creator Live Streaming Platform",
+    description: "Where creators and communities connect in real time.",
+    images: [
+      {
+        url: "/spooky.svg",
+        width: 1200,
+        height: 630,
+        alt: "NexusLive streaming platform",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NexusLive - Real-Time Creator Live Streaming Platform",
+    description: "Where creators and communities connect in real time.",
+    images: ["/spooky.svg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   icons: {
     icon: "/spooky.svg",
   },
@@ -126,6 +225,8 @@ export default function RootLayout({
        * - `flex-col`    : Stacks children vertically (header, main, footer pattern)
        */}
       <body className="flex min-h-full flex-col">
+        {/* Schema.org structured data */}
+        <JsonLd data={structuredData} />
         {/*
          * NextSSRPlugin: UploadThing SSR optimization.
          *

@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { Prisma } from "@/generated/prisma";
 import { db } from "@/lib/db";
 
@@ -53,6 +55,9 @@ export type StreamPlayerStream = NonNullable<StreamPlayerUser["stream"]>;
  * Retrieves a user by their unique username, including their stream
  * configuration and follower count.
  *
+ * Wrapped with React `cache` to memoize the lookup across Server Components
+ * and `generateMetadata` within the same request lifecycle.
+ *
  * Used primarily for public-facing profile/stream pages where only a
  * limited subset of user fields should be exposed. Does **not** include
  * `externalUserId`; use {@link getUserByUsernameWithExternalId} for authorization checks.
@@ -61,7 +66,7 @@ export type StreamPlayerStream = NonNullable<StreamPlayerUser["stream"]>;
  * @returns The matching user (with `stream` and `_count.followedBy`
  *          selected), or `null` if no user is found.
  */
-export async function getUserByUsername(username: string) {
+export const getUserByUsername = cache(async (username: string) => {
   const user = await db.user.findUnique({
     where: {
       username,
@@ -70,7 +75,7 @@ export async function getUserByUsername(username: string) {
   });
 
   return user;
-}
+});
 
 /**
  * Retrieves a user by their unique username, including both the public fields

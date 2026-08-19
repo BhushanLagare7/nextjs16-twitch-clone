@@ -52,6 +52,14 @@ describe("isPublicRoute", () => {
     assert.equal(isPublicRoute("/sign-up/verify"), true);
   });
 
+  it("treats /search as public", () => {
+    assert.equal(isPublicRoute("/search"), true);
+  });
+
+  it("treats /search/* as public", () => {
+    assert.equal(isPublicRoute("/search/streams"), true);
+  });
+
   // ── Dynamic /:username public routes ─────────────────────────────────
 
   it("treats a single-segment root path as a public /:username route", () => {

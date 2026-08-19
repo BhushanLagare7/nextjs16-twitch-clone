@@ -6,8 +6,18 @@
  */
 
 import { Suspense } from "react";
+import type { Metadata } from "next";
 
 import { Results, ResultsSkeleton } from "./_components/results";
+
+/**
+ * Metadata for the home page.
+ */
+export const metadata: Metadata = {
+  title: "Live Streams & Creator Channels",
+  description:
+    "Discover recommended live streams, top content creators, and active broadcasts on NexusLive.",
+};
 
 /**
  * HomePage component - The root page of the application.

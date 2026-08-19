@@ -13,7 +13,21 @@
  * @module AuthLayout
  */
 
+import type { Metadata } from "next";
+
 import { Logo } from "./_components/logo";
+
+/**
+ * Metadata configuration for authentication routes.
+ * Prevents search engines from indexing authentication flow screens.
+ */
+export const metadata: Metadata = {
+  title: "Account Authentication",
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
 
 /**
  * AuthLayout component for wrapping authentication pages.
