@@ -15,20 +15,10 @@ import { toast } from "sonner";
 
 import { getMoreSearchResults } from "@/actions/search";
 import { Button } from "@/components/ui/button";
-import { Stream, User } from "@/generated/prisma";
+import { type SearchResultItem } from "@/lib/search-service";
 
 import { ResultCard } from "./result-card";
 
-/**
- * A single search result item containing stream data joined with a
- * narrowed user payload (only public-facing fields).
- */
-type SearchResultItem = Pick<
-  Stream,
-  "id" | "name" | "isLive" | "thumbnailUrl" | "updatedAt"
-> & {
-  user: Pick<User, "username" | "imageUrl">;
-};
 
 /**
  * Props for the {@link ResultsList} component.

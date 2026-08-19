@@ -1,4 +1,4 @@
-import { Prisma } from "@/generated/prisma";
+import { Prisma, Stream, User } from "@/generated/prisma";
 import { getSelf } from "@/lib/auth-service";
 import { db } from "@/lib/db";
 
@@ -7,6 +7,19 @@ import { db } from "@/lib/db";
  * Used to enforce a bounded result set with cursor-based pagination.
  */
 export const SEARCH_PAGE_SIZE = 20;
+
+/**
+ * Shape of a single search result item returned by {@link getSearch}.
+ *
+ * Matches exactly the fields selected by the search query: the core
+ * stream display fields plus the streamer's public profile fields.
+ */
+export type SearchResultItem = Pick<
+  Stream,
+  "id" | "name" | "isLive" | "thumbnailUrl" | "updatedAt"
+> & {
+  user: Pick<User, "username" | "imageUrl">;
+};
 
 /**
  * Searches for streams by stream name or by the streamer's username.
@@ -25,14 +38,17 @@ export const SEARCH_PAGE_SIZE = 20;
  *               stream's `name` or the owning user's `username`.
  * @param cursor - Optional stream ID to continue pagination from. When
  *                 provided, results start after this record.
- * @returns An object containing `items` (the matching streams, each
- *          including its associated `user` with only public username and
- *          imageUrl fields) and `nextCursor` (the ID to pass for the next page,
- *          or `null` if no more results exist). Items are ordered by live
- *          status first (live streams first), then by most recently updated,
- *          with `id` as a deterministic tie-breaker.
+ * @returns An object containing `items` (the matching streams as
+ *          {@link SearchResultItem} objects) and `nextCursor` (the ID to
+ *          pass for the next page, or `null` if no more results exist).
+ *          Items are ordered by live status first (live streams first),
+ *          then by most recently updated, with `id` as a deterministic
+ *          tie-breaker.
  */
-export async function getSearch(term?: string, cursor?: string) {
+export async function getSearch(
+  term?: string,
+  cursor?: string,
+): Promise<{ items: SearchResultItem[]; nextCursor: string | null }> {
   let userId: string | null = null;
 
   try {

@@ -12,7 +12,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Thumbnail, ThumbnailSkeleton } from "@/components/thumbnail";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VerifiedMark } from "@/components/verified-mark";
-import { Stream, User } from "@/generated/prisma";
+import { type SearchResultItem } from "@/lib/search-service";
 
 /**
  * Props for the {@link ResultCard} component.
@@ -25,10 +25,7 @@ import { Stream, User } from "@/generated/prisma";
  *   and the streamer's username and profile image.
  */
 interface ResultCardProps {
-  data: Pick<
-    Stream,
-    "id" | "name" | "thumbnailUrl" | "isLive" | "updatedAt"
-  > & { user: Pick<User, "username" | "imageUrl"> };
+  data: SearchResultItem;
 }
 
 /**

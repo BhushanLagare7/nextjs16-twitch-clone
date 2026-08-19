@@ -96,7 +96,21 @@ export async function POST(req: NextRequest) {
           return new Response("Missing user ID in payload", { status: 400 });
         }
 
-        await resetIngresses(evt.data.id);
+        // Best-effort cleanup of LiveKit resources. Ignore not-found errors
+        // from LiveKit (e.g. room/ingress already deleted in a previous
+        // delivery), since Clerk webhooks are at-least-once and retries
+        // may re-deliver after resources are already gone. Other errors
+        // still propagate to avoid silently masking real failures.
+        try {
+          await resetIngresses(evt.data.id);
+        } catch (error) {
+          const isNotFound =
+            error instanceof Error &&
+            /not\s*found/i.test(error.message);
+          if (!isNotFound) {
+            throw error;
+          }
+        }
 
         await db.user.deleteMany({
           where: {

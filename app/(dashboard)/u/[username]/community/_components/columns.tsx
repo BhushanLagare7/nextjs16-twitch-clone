@@ -4,13 +4,14 @@
  *
  * Defines three columns using TanStack Table v9's typed `columnHelper`:
  * - `username` — sortable, renders a {@link UserAvatar} alongside the username text.
- * - `createdAt` — sortable date the block was created.
+ * - `createdAt` — sortable date the block was created, formatted as dd/MM/yyyy.
  * - `actions` — display column containing an {@link UnblockButton} for each row.
  */
 
 "use client";
 
 import { createColumnHelper } from "@tanstack/react-table";
+import { format } from "date-fns";
 import { ArrowUpDownIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -27,14 +28,14 @@ import { UnblockButton } from "./unblock-button";
  * - `userId`    — the blocked user's ID (used by {@link UnblockButton}).
  * - `imageUrl`  — the blocked user's profile image URL.
  * - `username`  — the blocked user's display name.
- * - `createdAt` — pre-formatted date string (e.g. "14/07/2024").
+ * - `createdAt` — raw Date value, formatted in the column cell renderer.
  */
 export type BlockedUser = {
   id: string;
   userId: string;
   imageUrl: string;
   username: string;
-  createdAt: string;
+  createdAt: Date;
 };
 
 /**
@@ -85,6 +86,9 @@ export const columns = columnHelper.columns([
         <ArrowUpDownIcon className="ml-2 size-4" />
       </Button>
     ),
+    // Format the raw Date as dd/MM/yyyy for display, while preserving the
+    // underlying Date value for chronological sort comparisons.
+    cell: ({ getValue }) => format(new Date(getValue()), "dd/MM/yyyy"),
   }),
   columnHelper.display({
     id: "actions",

@@ -155,9 +155,11 @@ export async function unblockUser(id: string) {
  * Retrieves all users blocked by the currently authenticated user.
  *
  * Queries the `block` table for every record where the authenticated user
- * is the blocker, including the full `blocked` user relation on each record.
+ * is the blocker, selecting only the fields needed for display from the
+ * `blocked` user relation (`id`, `imageUrl`, `username`, `createdAt`).
  *
- * @returns An array of block records, each including the `blocked` user relation.
+ * @returns An array of block records, each including a narrowed `blocked`
+ *   user relation with only the fields required by the community page.
  *   Returns an empty array if the authenticated user has not blocked anyone.
  * @throws {Error} If the current user cannot be authenticated (propagated
  *   from {@link getSelf}) or if the database query fails.
@@ -170,7 +172,14 @@ export async function getBlockedUsers() {
       blockerId: self.id,
     },
     include: {
-      blocked: true,
+      blocked: {
+        select: {
+          id: true,
+          imageUrl: true,
+          username: true,
+          createdAt: true,
+        },
+      },
     },
   });
 
